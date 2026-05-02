@@ -7,8 +7,11 @@ Sempre que preciso recuperar ou rever conceitos eu reviso por aqui. mas fácil s
 
 ### Menu
 - [Sintaxe Básica - Variáveis em Go](#sintaxe-basica)
-- 
-  
+- [Operadores em Golnag](#operadores)
+- [Condicionais](#condicionais)
+<br><br>:
+
+---
 # Sintaxe Basica
 
 ## 🎯 Objetivo
@@ -175,6 +178,554 @@ fmt.Println(x)   // 20
 ## Fim do conteúdo sobre sintaxe e declarações ##
 
 [Voltar](#menu)
+
+# Operadores
+## Operadores em GO
+
+```go
+Operador	            Particularidade em Go	                Importância
+= vs :=	:=              declara + atribui (único do Go)	        🔴 CRÍTICO
+++ / --	                São instruções, não expressões	        🔴 CRÍTICO
+== / !=	                Compara structs campo a campo	        🟡 IMPORTANTE
+& / *	                Ponteiros (sem aritmética)	            🟡 IMPORTANTE
+&& / ||	                Short-circuit (igual outras langs)	    🟢 BÁSICO
+<< / >>	                Shift com tipos unsigned	            🟢 BÁSICO
+&^ (AND NOT)	        Bit clear - exclusivo do Go	            🔵 DIFERENTE
+```
+
+**1. Operadores Aritméticos (iguais a C/Java)**
+```go
++   Adição
+-   Subtração  
+*   Multiplicação
+/   Divisão
+%   Módulo (resto)
+
+// Exemplos
+a := 10 + 5    // 15
+b := 10 - 5    // 5
+c := 10 * 5    // 50
+d := 10 / 3    // 3 (divisão de inteiros)
+e := 10.0 / 3  // 3.333... (float)
+f := 10 % 3    // 1
+```
+---
+
+⚠️ Atenção: Divisão entre inteiros trunca (não arredonda):  
+```go
+fmt.Println(10 / 3)   // 3 (não 3.33)
+fmt.Println(10 / 3.0) // 3.333...
+```
+----
+
+**2. Operadores de Atribuição (o MAIS importante)**
+
+**❌ O que NÃO funciona em Go:**  
+
+```go
+// Isso não compila:
+x =+ 1    // Go interpreta como x = (+1)
+x =- 1    // Go interpreta como x = (-1)
+
+// Operador ternário não existe:
+// resultado = (idade > 18) ? "maior" : "menor"  // ❌
+
+```
+
+✅ O que funciona (igual C/Java):  
+
+```go
+=    Atribuição simples
++=   Adição e atribuição
+-=   Subtração e atribuição
+*=   Multiplicação e atribuição
+/=   Divisão e atribuição
+%=   Módulo e atribuição
+&=   AND bit a bit e atribuição
+|=   OR bit a bit e atribuição
+^=   XOR bit a bit e atribuição
+<<=  Left shift e atribuição
+>>=  Right shift e atribuição
+
+// Exemplos
+x := 10
+x += 5    // x = 15
+x *= 2    // x = 30
+```
+
+🔴 CRÍTICO: Operador curto := (único do Go)  
+
+```go
+// := declara E atribui (só dentro de funções)
+nome := "João"        // declara variável nome do tipo string
+idade := 30           // declara idade como int
+
+// Equivalente a:
+var nome string = "João"
+var idade int = 30
+
+// Múltiplas variáveis
+x, y := 10, 20
+nome, idade := "Maria", 25
+
+// Reatribuição com := (se pelo menos uma variável for nova)
+x := 10         // declara x
+x, y := 20, 30  // x é reatribuído, y é declarado (✅ ok)
+// x := 40      // ❌ erro: x já declarada
+```
+
+## 3. 🔴 CRÍTICO: ++ e -- são INSTRUÇÕES, não expressões  
+**Diferença fundamental de C/Java/Python/JavaScript:**  
+
+```go 
+// ✅ Isso funciona (instrução)
+x := 5
+x++        // x = 6 (instrução válida)
+x--        // x = 5
+
+// ❌ Isso NÃO funciona em Go
+// y := x++      // Erro: x++ usado como expressão
+// fmt.Println(x++) // Erro
+// return x++    // Erro
+
+// ✅ Correto:
+x := 5
+x++
+y := x      // Agora sim, y = 6
+```
+**4. Operadores Relacionais (Comparação)**
+```go
+==   Igual
+!=   Diferente
+<    Menor
+<=   Menor ou igual
+>    Maior
+>=   Maior ou igual
+```
+
+**🟡 IMPORTANTE: Comparação de structs**
+```go
+type Pessoa struct {
+    Nome string
+    Idade int
+}
+
+p1 := Pessoa{"João", 30}
+p2 := Pessoa{"João", 30}
+p3 := Pessoa{"Maria", 25}
+
+fmt.Println(p1 == p2)  // true (compara campo a campo)
+fmt.Println(p1 == p3)  // false
+
+// ⚠️ Slices, maps e functions NÃO são comparáveis com == (exceto com nil)
+// slice1 := []int{1,2,3}
+// slice2 := []int{1,2,3}
+// fmt.Println(slice1 == slice2)  // ❌ Erro de compilação!
+```
+
+**Comparação com nil:**  
+
+```go
+var s []int
+var m map[string]int
+var p *int
+
+fmt.Println(s == nil)  // true (slice nil)
+fmt.Println(m == nil)  // true (map nil)
+fmt.Println(p == nil)  // true (ponteiro nil)
+```
+**5. Operadores Lógicos (Short-circuit)**
+```go
+&&   AND lógico (short-circuit)
+||   OR lógico (short-circuit)
+!    NOT lógico
+
+// Short-circuit: segunda condição só avalia se necessário
+func valida(x int) bool {
+    fmt.Println("Validando...")
+    return x > 0
+}
+
+if false && valida(10) {  // valida() NÃO é chamada
+    fmt.Println("nunca executa")
+}
+
+if true || valida(10) {   // valida() NÃO é chamada
+    fmt.Println("sempre executa")
+}
+
+```
+
+**6. Operadores Bit a Bit (para performance)**
+```go
+&    AND bit a bit
+|    OR bit a bit
+^    XOR bit a bit
+&^   AND NOT (bit clear) - Exclusivo do Go!
+<<   Left shift
+>>   Right shift
+
+// Exemplos práticos
+x := 0b1100 (12)
+y := 0b1010 (10)
+
+fmt.Printf("%04b\n", x & y)   // 1000 (8)  - AND
+fmt.Printf("%04b\n", x | y)   // 1110 (14) - OR
+fmt.Printf("%04b\n", x ^ y)   // 0110 (6)  - XOR
+
+// 🔵 &^ (AND NOT): zera bits onde y tem 1
+fmt.Printf("%04b\n", x &^ y)  // 0100 (4)  - limpa bits 1 e 3
+
+// Shift
+fmt.Println(1 << 10)  // 1024 (deslocamento para esquerda = multiplica por 2^n)
+fmt.Println(1024 >> 3) // 128 (deslocamento para direita = divide por 2^n)
+```
+
+**Uso prático de bit clear (&^):**  
+
+```go
+// Flags de permissão
+const (
+    Read  = 1 << iota  // 1 (0b001)
+    Write              // 2 (0b010)
+    Execute            // 4 (0b100)
+)
+
+permissoes := Read | Write  // 0b011 (3)
+
+// Remover permissão de escrita usando &^
+permissoes = permissoes &^ Write  // 0b001 (1) - apenas Read
+```
+**7. Operadores de Ponteiros**
+
+```go
+&    Endereço de memória (referência)
+*    Ponteiro (dereferência)
+
+// Exemplo
+x := 42
+ptr := &x        // ptr recebe endereço de x
+fmt.Println(ptr) // 0xc000012088
+fmt.Println(*ptr) // 42 (valor apontado)
+
+*ptr = 100       // muda o valor de x através do ponteiro
+fmt.Println(x)   // 100
+```
+
+⚠️ Não há aritmética de ponteiros em Go seguro (diferente de C):
+
+```go
+// ptr++  // ❌ Erro: aritmética de ponteiros não permitida
+```
+**8. Precedência de Operadores**
+
+```go
+Precedência	                    Operadores
+   1 (mais alta)	            * / % << >> & &^
+   2	                         + - | ^
+   3	                         == != < <= > >=
+   4	                           &&
+   5                           (mais baixa)	||
+```
+
+**Use parênteses para clareza:** 
+```go
+// Ambíguo
+x := 1 + 2*3  // 7 (não 9)
+
+// Claro
+y := (1 + 2) * 3  // 9
+```
+
+**9. Operador Especial: Vírgula (em declarações)**
+
+```go
+// Declaração múltipla
+x, y := 10, 20
+
+// Swap (simples!)
+a, b := 5, 10
+a, b = b, a  // a=10, b=5
+
+// Ignorar valores com blank identifier
+nome, _ := obterNome()  // ignora segundo retorno
+
+```
+
+**🐛 Erros Comuns com Operadores**
+```go
+// 1. Confundir = com :=
+x = 10        // ❌ erro se x não foi declarado antes
+x := 10       // ✅ correto (declara e atribui)
+
+// 2. Usar ++ como expressão
+// y = x++     // ❌ erro
+
+// 3. Comparar tipos diferentes
+// if 10 == 10.0  // ❌ erro: tipos incompatíveis (int vs float64)
+
+// 4. Divisão inteiro com float
+var a int = 10
+var b float64 = 3.0
+// c := a / b    // ❌ erro: tipos diferentes
+c := float64(a) / b  // ✅ conversão explícita
+
+// 5. Operador ternário
+// resultado := idade > 18 ? "maior" : "menor"  // ❌ erro
+
+// Correção:
+var resultado string
+if idade > 18 {
+    resultado = "maior"
+} else {
+    resultado = "menor"
+}
+
+```
+
+[Voltar](#menu)
+
+# Condicionais
+
+**📘 Condicionais em Go - Sintaxe Essencial**
+
+```go
+🎯 Resumo Rápido (para consulta diária)  
+Recurso	                    Sintaxe	                    Particularidade
+if                          if  condicao { }	        Obrigatório {} mesmo com 1 linha
+if-else	                    if cond { } else { }	    else na MESMA linha da }
+if com init	                if x := 10; x > 0 { }	    Variável existe SOMENTE no if/else
+switch	                    switch valor { case 1: }	Fallthrough é opcional (não automático)
+switch true	                switch { case x > 0: }	    Switch sem expressão = switch true
+type switch	                switch v.(type) { }	        Para interfaces
+
+
+```
+
+**1. If Statement (Obrigatório {})**  
+```go
+// ✅ Correto
+if idade >= 18 {
+    fmt.Println("Maior de idade")
+}
+
+// ❌ Erro - chaves obrigatórias MESMO com 1 linha
+// if idade >= 18 fmt.Println("Maior")  // NÃO COMPILA
+
+// ✅ Else na MESMA linha da chave de fechamento
+if idade >= 18 {
+    fmt.Println("Maior")
+} else {
+    fmt.Println("Menor")
+}
+
+// ✅ Else if
+if nota >= 7 {
+    fmt.Println("Aprovado")
+} else if nota >= 5 {
+    fmt.Println("Recuperação")
+} else {
+    fmt.Println("Reprovado")
+}
+
+```
+**2. 🟡 If com Inicialização (Init Statement)**
+
+**Característica única do Go que você vai usar MUITO:**
+
+```go
+// Variável declarada SÓ existe dentro do if/else
+if err := processar(); err != nil {
+    fmt.Println("Erro:", err)
+    return
+}
+// err NÃO existe aqui fora!
+
+// Múltiplas variáveis
+if nome, idade := obterDados(); idade >= 18 {
+    fmt.Printf("%s é maior de idade\n", nome)
+}
+
+// Uso real (muito comum)
+if file, err := os.Open("config.txt"); err != nil {
+    log.Fatal(err)
+} else {
+    defer file.Close()
+    // usar file aqui
+}
+
+```
+**Por que isso é útil? Limita o escopo da variável, evitando vazamentos e deixando explícito que ela só serve para aquela validação.**
+
+**3. Switch Statement (Diferente de C/Java)**  
+
+**🔴 PONTO CRÍTICO: Sem fallthrough automático!**  
+
+```go
+// Em C/Java: case "cai" para o próximo
+// Em Go: case NÃO cai automaticamente
+
+dia := 2
+
+switch dia {
+case 1:
+    fmt.Println("Domingo")
+case 2:
+    fmt.Println("Segunda")  // Executa SÓ este
+    // break é implícito, não precisa colocar
+case 3:
+    fmt.Println("Terça")
+default:
+    fmt.Println("Outro dia")
+}
+// Saída: "Segunda"
+```
+
+**Fallthrough explícito (quando você QUER que caia):**
+
+```go
+switch dia {
+case 1:
+    fmt.Println("Domingo")
+    fallthrough  // ✅ Força cair para o próximo case
+case 2:
+    fmt.Println("Segunda também executa!")
+}
+
+```
+**Switch com múltiplos valores:**  
+```go
+switch dia {
+case 1, 7:
+    fmt.Println("Fim de semana")
+case 2, 3, 4, 5, 6:
+    fmt.Println("Dia útil")
+default:
+    fmt.Println("Dia inválido")
+}
+
+```
+**4. 🟡 Switch sem Expressão (switch true)**  
+**Muito útil para substituir if-else longo:**  
+```go
+nota := 85
+
+// Estes dois são IDÊNTICOS:
+
+// Forma 1: switch tradicional com true
+switch {
+case nota >= 90:
+    fmt.Println("A")
+case nota >= 80:
+    fmt.Println("B")
+case nota >= 70:
+    fmt.Println("C")
+default:
+    fmt.Println("Reprovado")
+}
+
+// Forma 2: switch true explícito (mesma coisa)
+switch true {
+case nota >= 90:
+    fmt.Println("A")
+// ... igual
+}
+```
+
+**Vantagem: Mais limpo que vários if-else if.**
+
+**5. Switch com Inicialização (Igual if)**  
+
+```go
+switch nota := calcularNota(); {
+case nota >= 90:
+    fmt.Println("Excelente")
+case nota >= 70:
+    fmt.Println("Bom")
+default:
+    fmt.Println("Precisa melhorar")
+}
+// nota não existe aqui fora
+```
+
+**6. Type Switch (Para interfaces)**
+
+```go
+func identificarTipo(v interface{}) {
+    switch v.(type) {
+    case int:
+        fmt.Println("É um inteiro")
+    case string:
+        fmt.Println("É uma string")
+    case bool:
+        fmt.Println("É um booleano")
+    case nil:
+        fmt.Println("É nil")
+    default:
+        fmt.Println("Tipo desconhecido")
+    }
+}
+
+// Com acesso ao valor
+func processar(v interface{}) {
+    switch valor := v.(type) {
+    case int:
+        fmt.Printf("Inteiro: %d\n", valor)
+    case string:
+        fmt.Printf("String: %s\n", valor)
+    }
+}
+```
+**7. Comparações Importantes**
+**Em Go, if aceita APENAS booleanos:** 
+
+```go
+// ✅ Correto
+if x > 0 { }
+
+// ❌ Erro (diferente de Python/JS/C)
+// if x { }  // Erro: x é int, não bool
+
+// ✅ Correto
+if x != 0 { }
+```
+
+**Comparação com nil:**
+```go
+var err error  // nil
+
+if err != nil {
+    fmt.Println("Tem erro")
+} else {
+    fmt.Println("Tudo ok")
+}
+
+// ⚠️ Atenção: slice/map vazio NÃO é nil
+var s []int  // nil
+s = []int{}  // NÃO é nil (é vazio mas alocado)
+
+if s == nil {
+    fmt.Println("É nil")
+}
+```
+**📋 Tabela de Comparação: Go vs Outras Linguagens**  
+
+
+```go
+Característica	        Go	        C/Java	        Python	        JavaScript
+{} obrigatório	        ✅	        ✅	            ❌	            ❌
+Parênteses na condição	❌	        ✅	            ❌	            ✅
+else na mesma linha	    ✅           ❌	            N/A	             ❌
+Fallthrough automático	❌	        ✅	            N/A	             ✅(sem break)
+If com init	            ✅	        ❌	            ❌	            ❌
+Condição só booleana	✅	        ✅	            ✅(Truthy)	    ✅(Truthy)
+```
+
+[voltar](#menu)
+
+
+
+
 
 
 
