@@ -1,0 +1,107 @@
+seção 14 - Goroutine.
+Aula: processadores e threads
+-O que está sendo abordado.
+-Processamento de thread.
+
+Aula: O que é goroutine?
+O que é a nível de engenharia eletrônica e da computação?
+No banck-end o que ele faz?
+No golang, c++, java etc..
+O que é concorrência? È chamado de concorrẽncia apenas no golang?
+
+
+Aula: sync.WaitGroup
+O que é, para que serve onde uso e quando uso?
+
+Aula:syncMutex
+O que é, para que serve onde uso e quando uso?
+
+Aula: channel
+O que é channel?
+Por que ele existe?
+O que ele resolve?
+Onde ele é usado e quando ele é usado?
+o channel seria como se fosse um barramento i2c num hardware esp32, é isso?
+
+Aula: channel buffer
+O que é channel buffer?
+O que ele faz
+como configuro ele para receber ou enviar?
+
+
+Seção 15: Escopo e Github
+projeto proposto
+
+Seção 16 Criação do domínio
+Aula : Dominio
+Aula : campaing
+Aula : Constructor
+Aula : Teste de Unidade
+Aula : Testfy
+https://github.com/stretchr/testify#
+ o que é o assesrt testfy?
+ como é feito um test?
+Aula : id
+https://github.com/rs/xid
+	Gerador de id?
+Aula : melhorando testes
+Aula : validando domínio
+Aula : Serviços
+mok, o que é?
+Aula : Mascarando erros
+Aula : validando struct I
+
+Aula : Validando struct II 
+tipos de validação via anotações para struct.f
+Aula : Aplicando validação com teste de unidade
+
+Aula : WebAplication
+Aula : hosting
+Aula : API
+
+seção 19: chi-framwork web
+Aula : chi
+Aula : Rotas
+Aula : Parãmetros
+Aula : HTTP
+Aula : Retornando json
+Aula : Métodos de acesso
+Aula : http.handler vs http.handlerFunc
+Aula : Middlewares
+
+seção 20: endpoints
+Aula : POST Campaing
+Aula : Repository Campaing
+Aula : Air - Um "live reload"
+Aula : Refatorando endpoints
+Aula : Manipulador global de erros
+Aula : Como debugar um projeto
+
+seção 21: testando endpoints
+Aula : teste handle erros 
+Aula : teste domain error
+Aula : test obj
+Aula : test campaing post
+Aula : Corrigindo problemas de build
+
+Seção 23: Database
+Aula : docker
+Aula : executar postgree
+Aula : pgAdmin
+Aula : gorm
+Aula : instalando gorm
+Aula : alterando repositório
+Aula : injetando conexão nos serviços
+Aula : auto migrate
+Aula : gerando tabelas
+Aula : colunas com tamanhos fixos
+Aula : testando app com banco de dados
+Aula : cancelar campaing (update)
+Aula : gorm update
+Aula : gorma delete
+Aula : gorm preload
+Aula : primeira estratégia de delete
+Aula : segunda estratégia de delete
+
+seção 24: Status code not found
+status not found primeira estratégia
