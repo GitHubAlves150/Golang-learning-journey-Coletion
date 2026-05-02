@@ -1,30 +1,191 @@
 # Golang
 ## Introdução
-Este README, é uma breve anotações que fiz ao longo do mês de Abril de 2026 sobe Golang e suas particularidade.  
+Este README, é uma breve anotação que fiz ao longo do mês de Abril de 2026 sobe Golang e suas particularidade. Aqui eu anotei os principais conceitos da linguagem para eu guiar um caminho solido e progressivo em Golang.
+Sempre que preciso recuperar ou rever conceitos eu reviso por aqui. mas fácil saber onde está do que ficar procurando aleatóriamente pela internet.
+
+**Sintaxe básica**
+
+### Menu
+- [Sintaxe Básica - Variáveis em Go](#sintaxe-basica)
+- 
+  
+# Sintaxe Basica
+
+## 🎯 Objetivo
+Entender como declarar, inicializar e usar variáveis em Go, incluindo particularidades como **zero values**, inferência de tipo e escopo.
+
+---
+
+**2. Declaração com Inicialização**
+
+```go
+var nome string = "João"
+var idade int = 30
+var ativo bool = true
+
+// Múltiplas
+var x, y int = 10, 20
+var (
+    nome   string = "Maria"
+    cidade string = "São Paulo"
+)
+```
+
+**3. Inferência de Tipo (:= - operador curto)**
+
+```go
+nome := "Carlos"        // string
+idade := 25             // int
+preco := 99.99          // float64
+ativo := true           // bool
+
+// Múltiplas
+nome, idade := "Ana", 28
+x, y := 10, 20
+
+```
+⚠️ Regra: := só pode ser usado dentro de funções
+
+**4. Zero Values (Valores Padrão)**
+- Em Go, toda variável declarada tem um valor padrão (não é null ou undefined):
+  
+```go
+Tipo                    	                    Zero Value
+
+int, int8, int64	                            0
+float32, float64	                            0.0
+bool	                                        false
+string	                                        "" (vazia)
+pointer, slice, map, chan, func, interface	    nil
+----------------Exemplo----------------------------------------
+var a int       // 0
+var b string    // ""
+var c bool      // false
+var d *int      // nil
+
+fmt.Printf("a=%d, b='%s', c=%t, d=%v\n", a, b, c, d)
+// Output: a=0, b='', c=false, d=<nil>
+
+```
+**5. Tipos Básicos em Go**
+```go
+// Inteiros (escolha o menor necessário)
+var i int     // depende da arquitetura (32 ou 64 bits)
+var i8 int8   // -128 a 127
+var i16 int16 // -32768 a 32767
+var i32 int32 // -2.147.483.648 a 2.147.483.647
+var i64 int64 // -9.223.372.036.854.775.808 a 9.223.372.036.854.775.807
+
+// Inteiros sem sinal
+var u uint    // 0 a 4294967295 (32 bits) ou mais
+var u8 uint8  // 0 a 255 (byte)
+var u16 uint16
+var u32 uint32
+var u64 uint64
+
+// Ponto flutuante
+var f32 float32 // ~6 casas decimais de precisão
+var f64 float64 // ~15 casas decimais (padrão, mais preciso)
+
+// Texto
+var s string   // sequência imutável de bytes (UTF-8)
+var b byte     // alias para uint8
+var r rune     // alias para int32 (representa um caractere Unicode)
+
+// Booleanos
+var verdadeiro bool = true
+var falso bool = false
+
+
+```
+**6. Conversão de Tipos (Type Conversion)**
+- Em Go não há conversão implícita - você precisa fazer explícita:
+  
+```go
+    var x int = 10
+var y float64 = float64(x) // ✅ conversão explícita
+
+var a int = 10
+var b int64 = int64(a) // ✅ ok
+
+// ❌ Isso NÃO funciona:
+// var c float64 = a  // erro: cannot use a (type int) as type float64
+
+```
+
+**7. Constantes**
+
+```go
+// Constantes tipadas
+const Pi float64 = 3.14159
+const Nome string = "GoLang"
+
+// Constantes não tipadas (mais flexíveis)
+const (
+    SegundosPorMinuto = 60
+    MinutosPorHora    = 60
+    HorasPorDia       = 24
+)
+
+// Iota - enumerador automático
+type DiaSemana int
+const (
+    Domingo DiaSemana = iota // 0
+    Segunda                   // 1
+    Terca                     // 2
+    Quarta                    // 3
+    Quinta                    // 4
+    Sexta                     // 5
+    Sabado                    // 6
+)
+```
+**8. Escopo de Variáveis**
+```go
+package main
+
+var global = "acessível em todo o pacote" // Pacote scope
+
+func main() {
+    local := "acessível só dentro da função" // Função scope
+    
+    if true {
+        bloco := "acessível só dentro deste bloco" // Bloco scope
+        fmt.Println(bloco)  // ✅ ok
+    }
+    
+    // fmt.Println(bloco)  // ❌ erro: bloco não definido
+    
+    // Shadowing (sobrescrita de variável)
+    global := "variável local com mesmo nome"  // ⚠️ cria uma nova, não altera a global
+}
+```
+**9. Ponteiros (introdução)**
+```go
+x := 10
+ptr := &x       // ptr armazena o endereço de memória de x
+
+fmt.Println(x)   // 10
+fmt.Println(ptr) // 0xc000012088 (endereço)
+fmt.Println(*ptr) // 10 (dereferencing - valor apontado)
+
+*ptr = 20       // muda o valor de x via ponteiro
+fmt.Println(x)   // 20
+
+```
+## Fim do conteúdo sobre sintaxe e declarações ##
+
+[Voltar](#menu)
 
 
 
 
 
-começa com  
+---
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+<br><br>
+<br><br>
+<br><br>
+<br><br><br><br><br><br><br><br><br><br>
 
 
 ## Goroutine
