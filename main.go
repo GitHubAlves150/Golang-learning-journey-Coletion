@@ -11,34 +11,19 @@ import (
 
 func main() {
 
-	//laço for simples
-	for i := 0; i < 10; i++ {
-		fmt.Println(">> ", i)
-	}
-	//range
-	numbers := []int{10, 20, 33, 43}
+	var numbers [5]int
 
-	for indices, _ := range numbers {
-		fmt.Println("indice: ", indices)
-		//fmt.Println("valorres: ", valores)
+	fmt.Println(numbers)
 
-	}
+	numbers[0] = 10
+	fmt.Println(numbers)
+	//inicialização durante a declaração
+	day := [3]string{"\nsegunda\n", "terça\n", "quarta\n"}
+	fmt.Println(day)
 
-	capitais := map[string]string{
-		"Br" : "Brasilia", //chave - valor
-		"Fr" : "Paris",
-		"Jp" : "Tóquio",
-	}
+	//inferencia de valores
+	notas := [...]int{33, 22, 43, 21, 434, 23213}
+	fmt.Println(notas)
 
-	for pais, capital:= range capitais{
-		fmt.Println("Pais: ", pais)
-		fmt.Println("Capital :", capital)
-	}
-
-
-
-	fmt.Println("ola...")
+	fmt.Println("FIM...")
 }
-
-
-
