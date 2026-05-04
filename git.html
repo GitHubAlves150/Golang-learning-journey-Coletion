@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Guia Git e GitHub</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      background-color: #f4f6f8;
+      color: #333;
+      line-height: 1.6;
+    }
+    h1, h2, h3 {
+      color: #2c3e50;
+    }
+    code, pre {
+      background: #1e1e1e;
+      color: #00ff9c;
+      padding: 10px;
+      display: block;
+      border-radius: 6px;
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      background: #fff;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+    }
+    th {
+      background-color: #2c3e50;
+      color: white;
+    }
+    .box {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+
+<h1>📚 Guia completo: Git e GitHub - Do zero ao push</h1>
+
+<div class="box">
+<h2>🔹 O que é cada coisa?</h2>
+<table>
+<tr><th></th><th>Git</th><th>GitHub</th></tr>
+<tr><td>O que é</td><td>Sistema de versionamento local</td><td>Plataforma online para hospedar repositórios</td></tr>
+<tr><td>Onde roda</td><td>No seu computador</td><td>Na nuvem</td></tr>
+<tr><td>Precisa de internet?</td><td>Não</td><td>Sim</td></tr>
+</table>
+</div>
+
+<div class="box">
+<h2>🚀 PASSO A PASSO COMPLETO</h2>
+
+<h3>1️⃣ Instalar o Git</h3>
+<pre>
+# Linux (Ubuntu/Debian)
+sudo apt install git
+
+# Verificar instalação
+git --version
+</pre>
+
+<h3>2️⃣ Configurar identidade</h3>
+<pre>
+git config --global user.name "SeuNome"
+git config --global user.email "seuemail@example.com"
+
+git config --list
+</pre>
+
+<h3>3️⃣ Criar ou clonar repositório</h3>
+<pre>
+# Criar
+mkdir meu-projeto
+cd meu-projeto
+git init
+
+# Clonar
+git clone https://github.com/usuario/repositorio.git
+cd repositorio
+</pre>
+
+<h3>4️⃣ Fazer alterações e versionar</h3>
+<pre>
+git status
+git add arquivo.txt
+git add .
+git commit -m "descrição"
+</pre>
+
+<h3>5️⃣ Conectar ao GitHub</h3>
+<pre>
+git remote add origin https://github.com/seu-usuario/seu-repositorio.git
+git remote -v
+</pre>
+
+<h3>6️⃣ Autenticação</h3>
+<p>Use TOKEN (não senha)</p>
+<pre>
+git config --global credential.helper 'cache --timeout=3600'
+git config --global credential.helper store
+</pre>
+
+<h3>7️⃣ Push</h3>
+<pre>
+git push -u origin main
+git push
+</pre>
+
+<h3>8️⃣ Branches</h3>
+<pre>
+git branch
+git checkout -b nova-branch
+git switch nova-branch
+git push -u origin nova-branch
+</pre>
+
+<h3>9️⃣ Merge</h3>
+<pre>
+git checkout main
+git merge outra-branch
+git push origin main
+</pre>
+
+<h3>🔟 Pull</h3>
+<pre>
+git fetch
+git pull origin main
+</pre>
+
+</div>
+
+<div class="box">
+<h2>📋 Comandos essenciais</h2>
+<table>
+<tr><th>Comando</th><th>O que faz</th></tr>
+<tr><td>git init</td><td>Inicializa repositório</td></tr>
+<tr><td>git clone</td><td>Baixa repositório</td></tr>
+<tr><td>git status</td><td>Estado dos arquivos</td></tr>
+<tr><td>git add .</td><td>Adiciona tudo</td></tr>
+<tr><td>git commit</td><td>Salva versão</td></tr>
+<tr><td>git push</td><td>Envia</td></tr>
+<tr><td>git pull</td><td>Atualiza</td></tr>
+<tr><td>git branch</td><td>Lista branches</td></tr>
+</table>
+</div>
+
+<div class="box">
+<h2>🔄 Fluxo diário</h2>
+<pre>
+git pull origin main
+git add .
+git commit -m "mudanças"
+git push origin main
+</pre>
+</div>
+
+<div class="box">
+<h2>🎯 Exemplo prático</h2>
+<pre>
+mkdir meu-projeto
+cd meu-projeto
+git init
+
+echo "# Meu Projeto" > README.md
+
+git add README.md
+git commit -m "primeiro commit"
+
+git remote add origin https://github.com/seu-usuario/meu-projeto.git
+git branch -M main
+git push -u origin main
+</pre>
+</div>
+
+<div class="box">
+<h2>⚠️ Erros comuns</h2>
+<table>
+<tr><th>Erro</th><th>Solução</th></tr>
+<tr><td>Authentication failed</td><td>Usar TOKEN</td></tr>
+<tr><td>Permission denied</td><td>Conta correta</td></tr>
+<tr><td>Failed to push</td><td>git pull antes</td></tr>
+<tr><td>Merge conflict</td><td>Resolver manualmente</td></tr>
+</table>
+</div>
+
+<div class="box">
+<h2>💡 Dicas</h2>
+<ul>
+<li>❌ Não usar sudo com Git</li>
+<li>✅ Fazer pull antes de push</li>
+<li>✅ Commits pequenos</li>
+<li>✅ Atualizar token</li>
+<li>✅ Usar git status</li>
+</ul>
+</div>
+
+</body>
+</html>
