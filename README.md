@@ -3,7 +3,7 @@
 ## Introdução
 Este README, é uma breve anotação que fiz ao longo do mês de Abril de 2026 sobe Golang e suas particularidade. Aqui eu anotei os principais conceitos da linguagem para eu guiar um caminho solido e progressivo em Golang.
 Sempre que preciso recuperar ou rever conceitos eu reviso por aqui. mas fácil saber onde está do que ficar procurando aleatóriamente pela internet.
-
+O arquivo git.html contém uma pagina html como gui de comando úteis para usar git e github
 **Sintaxe básica**
 
 ### Menu
