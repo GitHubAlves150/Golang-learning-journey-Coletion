@@ -31,7 +31,7 @@ type Cartao struct {
 }
 
 func (c Cartao) Pagar(valor float64) string {
-	if valor < c.Limite {
+	if valor > c.Limite {
 		return "Cartão recusado: limite insuficiente"
 	}
 	return fmt.Sprintf("Pagamento de R$ %.2f aprovado no cartão de %s", valor, c.NomeTitular)
@@ -51,7 +51,7 @@ type Pix struct {
 }
 
 func (p Pix) Pagar(valor float64) string {
-	if valor < p.Saldo {
+	if valor > p.Saldo {
 		return "Saldo insuficiente:"
 	}
 	return fmt.Sprintf("Pagamento de R$ %.2f aprovado na chave de %s", valor, p.Chave)
@@ -78,19 +78,33 @@ func (p Boleto) GetNome() string {
 	return "Boleto"
 }
 
+// =================================================================================================
+// 5. Função que aceita todos os tipos de pagamento(Polimorfismo)
+// =================================================================================================
+func FinalizarPagamento(pagamento Pagamento, valor float64) {
+	fmt.Println("Processando pagamento com ", pagamento.GetNome())
+	resultado := pagamento.Pagar(valor)
+	fmt.Println(resultado)
+}
+
 func main() {
 
-	cartao := Cartao{NomeTitular: "Lucas", Limite: 2000000.0}
-	pix := Pix{Chave: "048988450724", Saldo: 3000.0}
+	//criando diferentes formas de pagamento(cosntrutor)
+	cartao := Cartao{NomeTitular: "Lucas", Limite: 10000.00}
+	pix := Pix{Chave: "048988450724", Saldo: 30000.0}
 	boleto := Boleto{codigo: "AHSTFR654389FDSJFSDFKDMM998880-9"}
 
-	a := Pagamento.Pagar(cartao, 3000000)
-	b := Pagamento.Pagar(pix, 40000)
-	c := Pagamento.Pagar(boleto, 30)
+	//Polimorfismo em ação
+	//A mesma função FinalizarPagamento funciona para TODOS!
 
-	fmt.Println("..", a)
-	fmt.Println("..", b)
-	fmt.Println("..", c)
+	fmt.Println("----------------\n\n")
+	FinalizarPagamento(cartao, 500.0)
+
+	fmt.Println("----------------\n\n")
+	FinalizarPagamento(pix, 500.0)
+	
+	fmt.Println("----------------\n\n")
+    FinalizarPagamento(boleto, 200)
 
 	fmt.Println("....FIM.....")
 }
