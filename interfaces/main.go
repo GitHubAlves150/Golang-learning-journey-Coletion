@@ -35,14 +35,11 @@ func main() {
 	fmt.Println("Iniciando processamento sequencial....\n")
 
 	//Executa um depois do outro
-	resultado1 := ValidarPedido(pedidoID)
-	fmt.Println(resultado1)
+	go ValidarPedido(pedidoID)
 
-	resultado2 := ProcessarPedido(pedidoID)
-	fmt.Println(resultado2)
+	go ProcessarPedido(pedidoID)
 	
-	resultado3 := NotificarCliente(pedidoID)
-	fmt.Println(resultado3)
+	go NotificarCliente(pedidoID)
 
 	fmt.Println("Tempo total: ", time.Since(inicio))
 	fmt.Println("....FIM.....")
