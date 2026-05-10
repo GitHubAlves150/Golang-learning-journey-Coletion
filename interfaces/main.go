@@ -2,44 +2,60 @@ package main
 
 import (
 	"fmt"
+	"sync" //adicionado para uso do waitgroup
 	"time"
 )
 
 // ============================================
-// TRÊS MÉTODOS (cada um demora 1 segundo)
+// TRÊS MÉTODOS (adaptados para usar WaitGroup)
 // ============================================
 
-func ValidarPedido(pedidoID int) string {
+func ValidarPedido(pedidoID int, wg *sync.WaitGroup) {
+	defer wg.Done()             //Avisa que terminou
 	time.Sleep(1 * time.Second) //simula trabalho
-	return fmt.Sprintln("Pedido :",pedidoID ,"Validação concluída", pedidoID)
+    fmt.Println("Pedido :", pedidoID, "Validação concluída", pedidoID)
 }
 
-func ProcessarPedido(pedidoID int) string {
+func ProcessarPedido(pedidoID int, wg *sync.WaitGroup){
+	defer wg.Done()             //Avisa que terminou
 	time.Sleep(1 * time.Second) //simula trabalho
-	return fmt.Sprintln("Pedido :",pedidoID, "Processamento concluído", pedidoID)
+	fmt.Println("Pedido :", pedidoID, "Processamento concluído", pedidoID)
 }
 
-func NotificarCliente(pedidoID int) string {
+func NotificarCliente(pedidoID int, wg *sync.WaitGroup) {
+	defer wg.Done() //Avisa que terminou
 	time.Sleep(1 * time.Second) //simula trabalho
-	return fmt.Sprintln("Pedido ",pedidoID, ": Notificacão enviada")
+	fmt.Println("Pedido ", pedidoID, ": Notificacão enviada")
 }
 
 // ============================================
-// EXECUÇÃO SEQUENCIAL (sem goroutines)
+// EXECUÇÃO COM GOROUTINES + WAITGROUP
 // ============================================
+
 
 func main() {
 
 	inicio := time.Now()
 	pedidoID := 123
-	fmt.Println("Iniciando processamento sequencial....\n")
+	fmt.Println("Iniciando processamento COM goroutine+waitgroup....\n")
+
+	var wg sync.WaitGroup
+
+	//Adicioan 3 tarefas ao contador
+	wg.Add(3)
+
 
 	//Executa um depois do outro
-	go ValidarPedido(pedidoID)
-
-	go ProcessarPedido(pedidoID)
+	go ValidarPedido(pedidoID, &wg)
 	
-	go NotificarCliente(pedidoID)
+
+	go ProcessarPedido(pedidoID, &wg)
+
+	go NotificarCliente(pedidoID, &wg)
+
+
+	//Espera todos terminarem
+	wg.Wait()
 
 	fmt.Println("Tempo total: ", time.Since(inicio))
 	fmt.Println("....FIM.....")
