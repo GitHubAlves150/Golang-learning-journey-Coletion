@@ -1,18 +1,15 @@
-# Interface
+🎯 Exemplo: Processamento de Dados com e sem Concorrência  
+📋 Cenário: Processamento de Pedidos  
 
-```go
-INTERFACE "Campeao"
-     │
-     ├── Atacar()  →  todo campeão precisa saber atacar
-     └── Defender() → todo campeão precisa saber defender
+Imagine que você tem 3 etapas para processar um pedido:  
 
-GUERREIRO ─────────┐
-MAGO ──────────────┤ TODOS são Campeões!
-ARQUEIRO ──────────┤
-PALADINO ──────────┘
+- 1.Validar (verifica se está tudo ok)
+- 2.Processar (calcula total, aplica descontos)
+- 3.Notificar (envia email, SMS)
+  
+**Versão 3: Se seues métodos precisam RETORNAR valores, use canais**  
 
-FUNÇÃO Batalha(campeao Campeao)
-    campeao.Atacar()    ← Funciona com QUALQUER campeão! 🎉
-    campeao.Defender()  ← Não importa se é Guerreiro ou Mago!
 
-```
+
+
+
