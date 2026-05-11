@@ -8,22 +8,21 @@ import (
 // channels
 // ============================================
 
-func Sendmessage(ch chan<- string) {
-	ch <- "Menssagem 1"
-	ch <- "Menssagem 2"
-	ch <- "Menssagem 3"
-
+func Readmessage(ch <-chan string) {
+	msg1:= <-ch
+	msg2:= <-ch
+	fmt.Println("menssagem recebida: \n", msg1," e ", msg2)
 }
 
 func main() {
 
-	ch := make(chan string,2)
+	ch:=make(chan string, 2)
 
-	go Sendmessage(ch)
 
-	fmt.Println(<-ch)
-	fmt.Println(<-ch)
-	fmt.Println(<-ch)
+	ch <-"Menssagem 1"
+	ch <-"Menssagem 2"
+
+	Readmessage(ch)
 
 	fmt.Println("....FIM.")
 }
