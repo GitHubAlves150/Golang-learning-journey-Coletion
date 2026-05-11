@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git e GitHub - Guia Completo de Comandos</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            padding: 40px 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 20px;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s;
+        }
+
+        .section:hover {
+            transform: translateY(-5px);
+        }
+
+        .section h2 {
+            color: #764ba2;
+            border-left: 5px solid #667eea;
+            padding-left: 15px;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .section h3 {
+            color: #555;
+            margin: 20px 0 10px 0;
+            font-size: 1.3em;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: bold;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        tr:hover {
+            background-color: #f0f0f0;
+        }
+
+        code {
+            background: #f4f4f4;
+            padding: 4px 8px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #e83e8c;
+            border: 1px solid #ddd;
+        }
+
+        pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+
+        pre code {
+            background: none;
+            color: #f8f8f2;
+            border: none;
+            padding: 0;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+
+        .warning {
+            background: #ffc107;
+            color: #333;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #dc3545;
+        }
+
+        .tip {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #28a745;
+        }
+
+        footer {
+            text-align: center;
+            color: white;
+            padding: 30px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 768px) {
+            th, td {
+                font-size: 0.9em;
+                padding: 8px;
+            }
+            
+            pre {
+                font-size: 0.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🐙 Git e GitHub - Guia Completo</h1>
+            <p>Comandos essenciais para o dia a dia do desenvolvedor</p>
+        </header>
+
+        <!-- 1. Instalação -->
+        <div class="section">
+            <h2>📥 1. Instalação do Git</h2>
+            
+            <h3>🔹 Windows</h3>
+            <pre><code>Baixar em: https://git-scm.com/download/win
+Instalar com as opções padrão</code></pre>
+
+            <h3>🔹 Linux (Ubuntu/Debian)</h3>
+            <pre><code>sudo apt update
+sudo apt install git
+git --version  # Verificar instalação</code></pre>
+
+            <h3>🔹 macOS</h3>
+            <pre><code>brew install git
+# ou baixar em https://git-scm.com/download/mac</code></pre>
+        </div>
+
+        <!-- 2. Configuração Inicial -->
+        <div class="section">
+            <h2>⚙️ 2. Configuração Inicial</h2>
+            <table>
+                <tr><th>Comando</th><th>Descrição</th></tr>
+                <tr><td><code>git config --global user.name "Seu Nome"</code></td><td>Configura nome do usuário</td></tr>
+                <tr><td><code>git config --global user.email "seu@email.com"</code></td><td>Configura email do usuário</td></tr>
+                <tr><td><code>git config --list</code></td><td>Lista todas configurações</td></tr>
+                <tr><td><code>git config --global core.editor "code --wait"</code></td><td>Configura VS Code como editor padrão</td></tr>
+            </table>
+            <div class="tip">
+                💡 <strong>Dica:</strong> Use <code>--global</code> para aplicar em todos repositórios ou remova para configurar apenas no repositório atual.
+            </div>
+        </div>
+
+        <!-- 3. Chave SSH -->
+        <div class="section">
+            <h2>🔑 3. Configurar Chave SSH (autenticação sem senha)</h2>
+            
+            <h3>🔹 Gerar chave SSH</h3>
+            <pre><code># Gerar chave (recomendado: ed25519)
+ssh-keygen -t ed25519 -C "seu@email.com"
+
+# Aperte Enter para local padrão
+# Digite uma senha (opcional) ou Enter para sem senha</code></pre>
+
+            <h3>🔹 Verificar chave gerada</h3>
+            <pre><code>ls -la ~/.ssh/
+# Deve aparecer id_ed25519 (privada) e id_ed25519.pub (pública)</code></pre>
+
+            <h3>🔹 Copiar chave pública</h3>
+            <pre><code>cat ~/.ssh/id_ed25519.pub
+# Copie todo conteúdo que aparecer</code></pre>
+
+            <h3>🔹 Adicionar no GitHub</h3>
+            <pre><code>1. Acesse: GitHub → Settings → SSH and GPG keys
+2. Clique em "New SSH key"
+3. Title: "Meu computador"
+4. Key: Cole a chave copiada
+5. Add SSH key</code></pre>
+
+            <h3>🔹 Testar conexão</h3>
+            <pre><code>ssh -T git@github.com
+# Deve aparecer: "Hi Usuario! You've successfully authenticated..."</code></pre>
+
+            <div class="tip">
+                💡 <strong>Com SSH configurado, você não digita usuário ou token nunca mais!</strong>
+            </div>
+        </div>
+
+        <!-- 4. Comandos Básicos -->
+        <div class="section">
+            <h2>📁 4. Comandos Básicos do Git</h2>
+            <table>
+                <tr><th>Comando</th><th>Descrição</th></tr>
+                <tr><td><code>git init</code></td><td>Inicializa repositório Git na pasta atual</td></tr>
+                <tr><td><code>git status</code></td><td>Verifica status dos arquivos (modificados, adicionados, etc.)</td></tr>
+                <tr><td><code>git add arquivo.txt</code></td><td>Adiciona arquivo específico para commit</td></tr>
+                <tr><td><code>git add .</code></td><td>Adiciona TODOS os arquivos modificados</td></tr>
+                <tr><td><code>git add -A</code></td><td>Adiciona todos (incluindo deletados)</td></tr>
+                <tr><td><code>git commit -m "mensagem"</code></td><td>Cria commit com mensagem</td></tr>
+                <tr><td><code>git commit --amend -m "nova msg"</code></td><td>Corrige mensagem do último commit</td></tr>
+                <tr><td><code>git log --oneline</code></td><td>Mostra histórico resumido</td></tr>
+                <tr><td><code>git log --graph --all</code></td><td>Mostra histórico em formato gráfico</td></tr>
+            </table>
+        </div>
+
+        <!-- 5. Repositório Remoto -->
+        <div class="section">
+            <h2>🌐 5. Sincronizar com GitHub (Remoto)</h2>
+            
+            <h3>🔹 Clonar repositório existente</h3>
+            <pre><code># HTTPS (pede token)
+git clone https://github.com/usuario/repositorio.git
+
+# SSH (recomendado - sem senha)
+git clone git@github.com:usuario/repositorio.git</code></pre>
+
+            <h3>🔹 Conectar repositório local ao remoto</h3>
+            <pre><code>git remote add origin https://github.com/usuario/repositorio.git
+# ou SSH
+git remote add origin git@github.com:usuario/repositorio.git</code></pre>
+
+            <h3>🔹 Verificar conexões remotas</h3>
+            <pre><code>git remote -v</code></pre>
+
+            <h3>🔹 Trocar de HTTPS para SSH</h3>
+            <pre><code>git remote set-url origin git@github.com:usuario/repositorio.git</code></pre>
+
+            <h3>🔹 Enviar para GitHub</h3>
+            <pre><code># Primeira vez (configura upstream)
+git push -u origin main
+
+# Próximas vezes
+git push
+
+# Enviar branch específica
+git push origin nome-branch</code></pre>
+
+            <h3>🔹 Baixar do GitHub</h3>
+            <pre><code>git pull              # Busca e mescla
+git fetch             # Só busca, não mescla
+git fetch --prune     # Remove referências de branches deletadas</code></pre>
+        </div>
+
+        <!-- 6. Trabalhando com Branches -->
+        <div class="section">
+            <h2>🌿 6. Branches (Ramos)</h2>
+            <table>
+                <tr><th>Comando</th><th>Descrição</th></tr>
+                <tr><td><code>git branch</code></td><td>Lista branches locais</td></tr>
+                <tr><td><code>git branch -a</code></td><td>Lista todas branches (local + remoto)</td></tr>
+                <tr><td><code>git branch -r</code></td><td>Lista apenas branches remotas</td></tr>
+                <tr><td><code>git checkout -b nova-branch</code></td><td>Cria e muda para nova branch</td></tr>
+                <tr><td><code>git checkout main</code></td><td>Muda para branch main</td></tr>
+                <tr><td><code>git switch main</code></td><td>Muda para branch main (versão moderna)</td></tr>
+                <tr><td><code>git merge branch</code></td><td>Mescla branch atual com outra</td></tr>
+                <tr><td><code>git branch -d branch</code></td><td>Deleta branch local</td></tr>
+                <tr><td><code>git push origin --delete branch</code></td><td>Deleta branch remota</td></tr>
+            </table>
+        </div>
+
+        <!-- 7. Desfazer Alterações -->
+        <div class="section">
+            <h2>⏪ 7. Desfazer/Reverter Alterações</h2>
+            <table>
+                <tr><th>Comando</th><th>Descrição</th></tr>
+                <tr><td><code>git restore arquivo.txt</code></td><td>Desfaz alterações (antes do add)</td></tr>
+                <tr><td><code>git restore --staged arquivo.txt</code></td><td>Remove arquivo do stage (desfaz add)</td></tr>
+                <tr><td><code>git reset HEAD~1</code></td><td>Desfaz último commit (mantém alterações)</td></tr>
+                <tr><td><code>git reset --hard HEAD~1</code></td><td>Desfaz commit E perde alterações ⚠️</td></tr>
+                <tr><td><code>git reset --hard origin/main</code></td><td>Reseta para estado do GitHub ⚠️</td></tr>
+            </table>
+            <div class="warning">
+                ⚠️ <strong>Cuidado!</strong> Comandos com <code>--hard</code> são irreversíveis. Use com atenção!
+            </div>
+        </div>
+
+        <!-- 8. Stash (Guardar trabalho temporário) -->
+        <div class="section">
+            <h2>📦 8. Stash - Guardar trabalho temporariamente</h2>
+            <table>
+                <tr><th>Comando</th><th>Descrição</th></tr>
+                <tr><td><code>git stash</code></td><td>Guarda alterações temporariamente</td></tr>
+                <tr><td><code>git stash list</code></td><td>Lista todos stashes salvos</td></tr>
+                <tr><td><code>git stash pop</code></td><td>Recupera último stash e remove da lista</td></tr>
+                <tr><td><code>git stash apply</code></td><td>Recupera stash mas mantém na lista</td></tr>
+                <tr><td><code>git stash drop</code></td><td>Remove último stash</td></tr>
+            </table>
+            <div class="tip">
+                💡 <strong>Use stash quando:</strong> Precisa mudar de branch urgente mas não quer commitar código incompleto.
+            </div>
+        </div>
+
+        <!-- 9. Visualizar diferenças -->
+        <div class="section">
+            <h2>👁️ 9. Ver diferenças (Diff)</h2>
+            <table>
+                <tr><th>Comando</th><th>Descrição</th></tr>
+                <tr><td><code>git diff</code></td><td>Mostra diferenças nos arquivos (antes do add)</td></tr>
+                <tr><td><code>git diff --staged</code></td><td>Mostra diferenças após add (antes do commit)</td></tr>
+                <tr><td><code>git diff main..branch</code></td><td>Diferença entre duas branches</td></tr>
+                <tr><td><code>git show</code></td><td>Mostra detalhes do último commit</td></tr>
+                <tr><td><code>git show hash</code></td><td>Mostra detalhes de commit específico</td></tr>
+            </table>
+        </div>
+
+        <!-- 10. Gerar Token GitHub -->
+        <div class="section">
+            <h2>🔐 10. Gerar Token GitHub (para HTTPS)</h2>
+            <pre><code>1. GitHub → Settings → Developer settings
+2. Personal access tokens → Tokens (classic)
+3. Generate new token (classic)
+4. Note: "git push"
+5. Expiration: 90 dias (ou personalizado)
+6. Scopes: Marcar "repo"
+7. Generate token
+8. COPIE O TOKEN (ex: ghp_abc123...)</code></pre>
+            <div class="tip">
+                💡 <strong>O token é usado como senha</strong> quando o Git pedir autenticação via HTTPS.
+            </div>
+        </div>
+
+        <!-- 11. Resumo Rápido -->
+        <div class="section">
+            <h2>⚡ 11. Fluxo de Trabalho Diário (Resumo)</h2>
+            <pre><code># 1. Baixar alterações
+git pull
+
+# 2. Verificar status
+git status
+
+# 3. Ver o que mudou
+git diff
+
+# 4. Adicionar tudo
+git add .
+
+# 5. Commitar
+git commit -m "descrição do que fez"
+
+# 6. Subir para GitHub
+git push
+
+# 7. Ver histórico
+git log --oneline --graph --all</code></pre>
+        </div>
+
+        <!-- 12. Comandos Úteis Extras -->
+        <div class="section">
+            <h2>🎯 12. Comandos Úteis Extras</h2>
+            <table>
+                <tr><th>Comando</th><th>Descrição</th></tr>
+                <tr><td><code>git tag v1.0.0</code></td><td>Cria tag (versão)</td></tr>
+                <tr><td><code>git push --tags</code></td><td>Envia tags para o GitHub</td></tr>
+                <tr><td><code>git cherry-pick hash</code></td><td>Aplica commit específico na branch atual</td></tr>
+                <tr><td><code>git rebase main</code></td><td>Reaplica commits sobre outra base</td></tr>
+                <tr><td><code>git clean -fd</code></td><td>Remove arquivos não rastreados ⚠️</td></tr>
+                <tr><td><code>git blame arquivo.txt</code></td><td>Mostra quem alterou cada linha</td></tr>
+            </table>
+        </div>
+
+        <!-- 13. Erros Comuns -->
+        <div class="section">
+            <h2>🐛 13. Erros Comuns e Soluções</h2>
+            <table>
+                <tr><th>Erro</th><th>Solução</th></tr>
+                <tr><td><code>Permission denied (publickey)</code></td><td>Chave SSH não configurada ou não adicionada no GitHub</td></tr>
+                <tr><td><code>Authentication failed</code></td><td>Usar TOKEN (não senha) no HTTPS ou configurar SSH</td></tr>
+                <tr><td><code>Failed to push</code></td><td>Fazer <code>git pull</code> primeiro para baixar alterações</td></tr>
+                <tr><td><code>Merge conflict</code></td><td>Resolver conflitos manualmente, depois <code>git add .</code> e <code>git commit</code></td></tr>
+                <tr><td><code>detached HEAD</code></td><td>Voltar com <code>git checkout main</code> ou <code>git switch main</code></td></tr>
+            </table>
+        </div>
+
+        <!-- 14. Aliases (Atalhos) -->
+        <div class="section">
+            <h2>🚀 14. Criar Aliases (Atalhos para comandos)</h2>
+            <pre><code># Criar alias "historico" para ver log bonito
+git config --global alias.historico "log --oneline --graph --all"
+
+# Usar:
+git historico
+
+# Criar alias "tudo" para ver status + log + branches
+git config --global alias.tudo '!git status && git log --oneline -5 && git branch -a'
+
+# Criar alias "ultimo" para ver último commit
+git config --global alias.ultimo "log -1 --stat"</code></pre>
+        </div>
+
+        <footer>
+            <p>🐙 Git & GitHub - Guia Completo | Atualizado em Maio/2026</p>
+            <p>Comandos essenciais para o desenvolvedor moderno</p>
+        </footer>
+    </div>
+</body>
+</html>

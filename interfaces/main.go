@@ -40,5 +40,5 @@ func main() {
 	time.Sleep(10*time.Second)
 
 
-	fmt.Println("....FIM.....")
+	fmt.Println("....FIM.")
 }
