@@ -9,12 +9,17 @@ import (
 // Mutex
 // ============================================
 
-var T int = 100000
-var counter int = 0 //recurso compartilhado
+var (//Declarnado mais de uma variavel 
+	T int=10000;
+	counter int = 0 //recurso compartilhado
+	mutex   sync.Mutex
+)
 
 func IncrementCount(wg *sync.WaitGroup) {
 	defer wg.Done()
+	mutex.Lock() //Pega a tarefa e segura, é como na analogia do banheiro. Aqui ele está fazendo "Pegar a chave e trancar a porta" (trava)
 	counter++
+	mutex.Unlock() //desbloqueia e segua adiante - seguinda a analogia do banheiro "Devolve a chave (destrava)"
 }
 
 func main() {
