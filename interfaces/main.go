@@ -2,44 +2,59 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"sync"
+
 )
 
 // ============================================
-// Mutex
+// worker Pool
 // ============================================
 
-var (//Declarnado mais de uma variavel 
-	T int=10000;
-	counter int = 0 //recurso compartilhado
-	mutex   sync.Mutex
-)
+func fetchURL(workerID int, url string){
+	resp, err := http.Get(url)
+	if err!=nil{
+		fmt.Println("Worker: erro ao acessar", workerID, url, err )
+	}
+	defer resp.Body.Close()
+	fmt.Println("Worker: concluido para ", workerID, " com status ", url, resp.StatusCode)
 
-func IncrementCount(wg *sync.WaitGroup) {
+}
+
+func worker(id int, urls <- chan string, wg *sync.WaitGroup){
 	defer wg.Done()
-	mutex.Lock() //Pega a tarefa e segura, é como na analogia do banheiro. Aqui ele está fazendo "Pegar a chave e trancar a porta" (trava)
-	counter++
-	mutex.Unlock() //desbloqueia e segua adiante - seguinda a analogia do banheiro "Devolve a chave (destrava)"
+
+	for url := range urls{
+		fetchURL(id, url)
+	}
 }
 
 func main() {
 
-	var wg sync.WaitGroup
-
-	wg.Add(T)
-
-	fmt.Println("......", counter)
-
-	for i := 0; i < T; i++ {
-
-		go IncrementCount(&wg)
-
-		//fmt.Println("..", counter)
-
+	urls := []string{//array de strings
+		"https://www.google.com", 
+		"https://www.github.com",
+		"https://www.golang.com", 
+		"https://www.stackoverflow.com",
+		"https://www.reddit.com",
 	}
 
-	wg.Wait()
-	fmt.Println(".>>", counter)
 
+	const numWorks =3 //numeros de works no pool
+	urlChannel :=make(chan string, len(urls))
+	var wg sync.WaitGroup
+
+	for i:=0; i<= numWorks; i++{
+		wg.Add(1)
+		go worker(i, urlChannel, &wg)
+	}
+
+	for _,url := range urls{
+		urlChannel <- url
+	}
+
+	close(urlChannel)
+
+	wg.Wait()
 	fmt.Println("....FIM.")
 }
