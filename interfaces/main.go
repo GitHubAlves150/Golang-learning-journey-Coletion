@@ -2,61 +2,42 @@ package main
 
 import (
 	"fmt"
-	"net/http"
 	"sync"
-
+	"time"
 )
 
-// ============================================
-// worker Pool
-// ============================================
+//=============================================
+//código base com problemas
+//=============================================
 
-func fetchURL(workerID int, url string){
-	resp, err := http.Get(url)
-	if err!=nil{
-		fmt.Println("Worker: erro ao acessar", workerID, url, err )
-	}
-	defer resp.Body.Close()
-	fmt.Println("Worker: concluido para ", workerID, " com status ", url, resp.StatusCode)
+var contador int = 0
 
-}
-
-func worker(id int, urls <- chan string, wg *sync.WaitGroup){
+func incrementar(wg *sync.WaitGroup) {
 	defer wg.Done()
-
-	for url := range urls{
-		fetchURL(id, url)
+	//cada goroutine vai incrementar 1000 vezes
+	for i := 0; i < 1000; i++ {
+		contador++ //Problema aqui
 	}
 }
 
 func main() {
-
-	urls := []string{//array de strings
-		"https://www.google.com", 
-		"https://www.github.com",
-		"https://www.golang.com", 
-		"https://www.stackoverflow.com",
-		"https://www.reddit.com",
-	}
-
-
-	const numWorks =3 //numeros de works no pool
-	urlChannel :=make(chan string, len(urls))
 	var wg sync.WaitGroup
 
-	for i:=0; i<= numWorks; i++{
+	numGoroutine := 100
+
+	inicio := time.Now()
+
+	for i := 0; i < numGoroutine; i++ {
 		wg.Add(1)
-		go worker(i, urlChannel, &wg)
+		go incrementar(&wg)
 	}
-
-	for _,url := range urls{
-		urlChannel <- url
-	}
-
-	close(urlChannel)
 
 	wg.Wait()
+
+	fmt.Println("Esperado ", 100*1000) //100.000
+	fmt.Println("Resultado ", contador)
+	fmt.Println("Diferença ", (100*1000)-contador)
+	fmt.Println("Tempo ", time.Since(inicio))
+
 	fmt.Println("....FIM.")
 }
-
-
