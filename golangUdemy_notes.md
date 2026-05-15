@@ -10,3 +10,4 @@ Implemente sem usar nenhum mecanismo de sincronização (sem Mutex, sem canal).
 
 ## 🧪 Execute e Observe  
 ## 🔍 O que está acontecendo?
+****
