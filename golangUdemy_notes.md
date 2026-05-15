@@ -8,3 +8,5 @@ Você tem uma variável contador que começa em 0. Você precisa criar 100 gorou
 No final, o valor esperado é 100.000 (100 × 1000).  
 Implemente sem usar nenhum mecanismo de sincronização (sem Mutex, sem canal).  
 
+## 🧪 Execute e Observe  
+## 🔍 O que está acontecendo?
