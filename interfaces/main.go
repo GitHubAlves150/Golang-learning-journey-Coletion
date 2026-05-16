@@ -1,25 +1,60 @@
 package main
 
-import "fmt"
+import(
+    "fmt"
+    "math/rand"
+    "sync"
+    "time"
+)
+ 
+var votos = make(map[string]int)  // ← map compartilhado!
+var mu sync.Mutex
 
-func sum(s []int, c chan int) {
-	sum := 0
-	for _, v := range s {
-		sum += v
-	}
-	c <- sum // send sum to c
+
+func votar(wg *sync.WaitGroup) {
+    defer wg.Done()
+    mu.Lock()//Comente esta linha e clica no F5 para debugar linha por linha. Verás que o map vai ser cnsultado simultaneo
+    // Escolhe um candidato aleatório
+    candidatos := []string{"A", "B", "C"}
+    escolhido := candidatos[rand.Intn(3)]
+    
+    // ← PROBLEMA! Acessando map sem proteção
+    votos[escolhido]++
+       mu.Unlock()//Comente esta linha e clica no F5 para debugar linha por linha. Verás que o map vai ser cnsultado simultaneo
 }
 
-func main() {
-	s := []int{7, 2, 8, -9, 4, 0}
+func sum(s []int, c chan int) {
+      sum := 0
+       for _, v := range s {
+               sum += v
+       }
+       c <- sum // send sum to c
+ }
+ 
 
-	c := make(chan int)
-	go sum(s[:3], c)//7, 2, 8
-	go sum(s[3:], c)//-9,4 0
-	go sum(s[:], c)//slice inteiro
-	x:= <-c // receive from c
-    y:= <-c
-	z:= <-c
-	
-	fmt.Println("x:",x, "y:",y, "z:",z)
+ func main() {
+    
+    var wg sync.WaitGroup
+    numGoroutines := 1000
+    
+    inicio := time.Now()
+    
+    for i := 0; i < numGoroutines; i++ {
+        wg.Add(1)
+        go votar(&wg)
+    }
+    
+    wg.Wait()
+    
+    total := 0
+    for _, v := range votos {
+        total += v
+    }
+    
+    fmt.Printf("Esperado: %d votos\n", numGoroutines)
+    fmt.Printf("Total apurado: %d votos\n", total)
+    fmt.Printf("Distribuição: %+v\n", votos)
+    fmt.Printf("Tempo: %v\n", time.Since(inicio))
+    
+ 
 }
