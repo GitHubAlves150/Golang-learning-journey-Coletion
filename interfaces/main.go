@@ -2,26 +2,24 @@ package main
 
 import (
 	"fmt"
+	"os"
 )
 
-func idade(idade int) (int, error) {
-	if idade < 0 {
-		return idade-10, nil
-	} else if idade > 150 {
-		return idade, nil
 
-	}
-	return idade+10, nil
-
-}
 
 func main() {
 
-	age, err:=idade(11)
-	if err != nil{
-		fmt.Println("opa")
-	}
+	//1. Lê o arquvio inteiro de uma vez
+	dados, err := os.ReadFile("log.txt")
 
-	fmt.Println(age, err)
+	if err != nil{
+		fmt.Errorf("Erro:", "não foi possivel ler o arquivo")
+		return
+	}
+	//2. Converte para string e exibe
+	fmt.Println(string(dados))
+
+	
+
 	fmt.Println("...FIM...")
 }
