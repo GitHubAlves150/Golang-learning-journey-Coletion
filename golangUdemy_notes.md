@@ -51,6 +51,7 @@ Vantagens: ✅ Simples,
 ✅ Fecha automaticamente  
 **Desvantagens:** ❌ Carrega tudo na memória, ❌ Ruim para arquivos gigantes
 
+---
 # 2. 📖 Método 2: os.Open() + defer - Abrir e LER COM SEGURANÇA  
 
 **Quando usar: PRÁTICA RECOMENDADA para a maioria dos casos**  
@@ -90,4 +91,28 @@ func main() {
 }
 
 ```
+
+**Quando usar: PRÁTICA RECOMENDADA para a maioria dos casos**
+
+---
+# 🔧 BOAS PRÁTICAS Essenciais  
+- 1. SEMPRE use defer file.Close()! 
+- 2. SEMPRE verifique erros! 
+- 3. Use defer LOGO APÓS abrir o arquivo 
+- 4. Propague erros com contexto 
+  
+## 📊 Comparação dos Métodos   
+
+
+```go
+
+Método	            Quando usar	                            Vantagem	                     Desvantagem
+os.ReadFile()	    Arquivos pequenos (<10MB)	            ✅ Mais simples	                ❌ Carrega tudo na memória
+bufio.Scanner	    Arquivos grandes, linha a linha	        ✅ Memória eficiente	            ❌ Linha >64KB quebra
+bufio.Reader	    Processamento em chunks	                ✅ Controle granular	            ❌ Mais código
+os.OpenFile()	    Precisa de controle de flags	        ✅ Flexível	                    ❌ Mais complexo
+
+``` 
+
+
 
