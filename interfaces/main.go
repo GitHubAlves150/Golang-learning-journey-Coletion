@@ -1,38 +1,62 @@
 package main
 
 import (
-	"bufio"
+	"encoding/json"
 	"fmt"
-	"os"
 )
 
+type Employee struct {
+	ID       int      `json:"id"`
+	Name     string   `json:"name"`
+	Position string   `json:"position"`
+	Skills   []string `json:"skils"`
+	Adress   `json:"address"`
+}
 
+type Adress struct {
+	City    string
+	Country string
+}
+
+// validação
+func validateEmployee(e Employee) error {
+	if e.Name == "" {
+		return fmt.Errorf("O nome do funcionário é obrigatório")
+
+	}
+	if e.Position == "" {
+		return fmt.Errorf("falha")
+	}
+	return  nil
+}
 
 func main() {
 
-	//1. Abrir o arquivo
-	file, err := os.Open("log.txt")
+    //1. Crio meu json
+    jsonData := `{
+                    "id": 1,
+                    "name": "", 
+                    "position": "engenheiro de Software",
+                    "skills": ["GO", "Python"],
+                    "address": {
+                        "city": "Osasco",
+                        "country": "Brasil"
+                    }
+                }`
 
-	if err !=nil{
-		fmt.Errorf("Erro: ", "Erro ao abrir o arquivo")
+    var employee Employee
+
+    err := json.Unmarshal([]byte(jsonData), &employee)
+	if err != nil {
+		fmt.Println("Falha ao decodificar o json", err)
 		return
 	}
-
-	defer file.Close() // Essencial!! Fecha o arquivo automaticamente no final
-
-	//2. Criar scanner para ler linha por linha do arquivo
-	scanner := bufio.NewScanner(file)
-
-	//3. ler cada linha
-	for scanner.Scan(){
-		linha := scanner.Text()
-		fmt.Println(linha)		
+	err=validateEmployee(employee)
+	if err!=nil {
+		fmt.Println("",err)
+		return 
 	}
 
-	//4. Verifica se houve erro na leitura
-	if err := scanner.Err(); err !=nil{
-		fmt.Println("Erro ao ler arquivo", err)
-	}
-
+	fmt.Println(employee)
 	fmt.Println("...FIM...")
 }
