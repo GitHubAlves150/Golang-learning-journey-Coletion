@@ -5,58 +5,30 @@ import (
 	"fmt"
 )
 
-type Employee struct {
-	ID       int      `json:"id"`
-	Name     string   `json:"name"`
-	Position string   `json:"position"`
-	Skills   []string `json:"skils"`
-	Adress   `json:"address"`
+type User struct {
+	Name  string `json:"nome"`
+ 	Email string `json:"email,omitempty"`
+	Senha string `json:"senha"`
+	Ativo bool `json:"ativo"`
+	Idade int `json:"idade"`
 }
 
-type Adress struct {
-	City    string
-	Country string
-}
 
-// validação
-func validateEmployee(e Employee) error {
-	if e.Name == "" {
-		return fmt.Errorf("O nome do funcionário é obrigatório")
-
-	}
-	if e.Position == "" {
-		return fmt.Errorf("falha")
-	}
-	return  nil
-}
 
 func main() {
 
-    //1. Crio meu json
-    jsonData := `{
-                    "id": 1,
-                    "name": "", 
-                    "position": "engenheiro de Software",
-                    "skills": ["GO", "Python"],
-                    "address": {
-                        "city": "Osasco",
-                        "country": "Brasil"
-                    }
-                }`
-
-    var employee Employee
-
-    err := json.Unmarshal([]byte(jsonData), &employee)
-	if err != nil {
-		fmt.Println("Falha ao decodificar o json", err)
-		return
-	}
-	err=validateEmployee(employee)
-	if err!=nil {
-		fmt.Println("",err)
-		return 
+	u:= User{
+		Name: "Lucas",
+		Email: "",
+		Senha: "12345",
+		Ativo: true,
+		Idade: 32,
 	}
 
-	fmt.Println(employee)
+	jsonDate,_ := json.Marshal(u)
+
+
+	fmt.Println(string(jsonDate))
+
 	fmt.Println("...FIM...")
 }
