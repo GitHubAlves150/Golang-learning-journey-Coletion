@@ -5,8 +5,14 @@ import (
 	"fmt"
 )
 
+
+//======================================================
+//Decodificação Json -> GO
+//======================================================
+
+
 type User struct {
-	Name  string `json:"nome"`
+	Name  string `json:"Name"`
  	Email string `json:"email,omitempty"`
 	Senha string `json:"senha"`
 	Ativo bool `json:"ativo"`
@@ -17,18 +23,26 @@ type User struct {
 
 func main() {
 
-	u:= User{
-		Name: "Lucas",
-		Email: "",
-		Senha: "12345",
-		Ativo: true,
-		Idade: 32,
+	//Json recebido de alguma API, Arquivo, etc
+	u:=`{
+		"Name": "Lucas",
+		"Email": "",
+		"Senha": "12345",
+		"Ativo": true,
+		"Idade": 32
+	}`
+
+	
+    //Decodificar
+	var usuario User
+	
+	err := json.Unmarshal( []byte(u), &usuario    )
+	
+	if err!= nil {
+		fmt.Println("Erro::::", err)
+		return
 	}
 
-	jsonDate,_ := json.Marshal(u)
-
-
-	fmt.Println(string(jsonDate))
-
+	fmt.Printf("%s %s\n %s\n %t\n %d\n",usuario.Name, usuario.Email, usuario.Senha, usuario.Ativo, usuario.Idade)
 	fmt.Println("...FIM...")
 }
