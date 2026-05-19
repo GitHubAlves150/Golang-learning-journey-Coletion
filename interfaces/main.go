@@ -3,46 +3,55 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 )
 
 
-//======================================================
-//Decodificação Json -> GO
-//======================================================
-
-
-type User struct {
-	Name  string `json:"Name"`
- 	Email string `json:"email,omitempty"`
-	Senha string `json:"senha"`
-	Ativo bool `json:"ativo"`
-	Idade int `json:"idade"`
+type Person struct{
+	Name string `json:"name"`
+	Age int `json:"age"`
 }
 
+func handler(w http.ResponseWriter, r *http.Request){
+	fmt.Println("requisição foi recebida")
+	var p Person
+
+	//Corpo da requisição
+	err :=json.NewDecoder(r.Body).Decode(&p)
+    if err != nil{
+		http.Error(w, "Erro ao processar Json", http.StatusBadRequest)
+		return
+	}
+	
+	fmt.Println(p)
+	fmt.Fprintf(w, "Recebido: %+v\n", p)
+
+}
 
 
 func main() {
-
-	//Json recebido de alguma API, Arquivo, etc
-	u:=`{
-		"Name": "Lucas",
-		"Email": "",
-		"Senha": "12345",
-		"Ativo": true,
-		"Idade": 32
-	}`
-
+	fmt.Println("Escutando na porta ")
+	http.HandleFunc("/submit", handler)
 	
-    //Decodificar
-	var usuario User
-	
-	err := json.Unmarshal( []byte(u), &usuario    )
-	
-	if err!= nil {
-		fmt.Println("Erro::::", err)
-		return
-	}
+	http.ListenAndServe(":8080", nil)
 
-	fmt.Printf("%s %s\n %s\n %t\n %d\n",usuario.Name, usuario.Email, usuario.Senha, usuario.Ativo, usuario.Idade)
 	fmt.Println("...FIM...")
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
