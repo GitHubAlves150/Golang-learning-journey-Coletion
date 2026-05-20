@@ -14,6 +14,7 @@ type Summary struct {
 
 var summaries []Summary
 
+
 func summariesHandler(w http.ResponseWriter, _ *http.Request) {
 	fmt.Println("list summary")
 	
