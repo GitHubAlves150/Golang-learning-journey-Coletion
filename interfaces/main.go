@@ -25,7 +25,7 @@ func main() {
 	}
 
 	//Cria um Handler(manipulador) que retorna essa estrutura pessoa em formato JSON
-	http.HandleFunc("/people", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/people", func(w http.ResponseWriter, _ *http.Request) {
 		//Diz que a resposta será um JSON
 		w.Header().Set("Contente-Type", "application/json")
 
