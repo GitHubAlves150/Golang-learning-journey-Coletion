@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 )
+
 //==============================================================
 //Servidor que ENVIA JSON(GET)
 //==============================================================
@@ -15,24 +16,35 @@ type Pessoa struct {
 	Idade int    `json:"idade"`
 }
 
-
 func main() {
 
-	//Cria uma estrutura do tipo Pessoa
-	people := Pessoa{
-		Nome:  "Lucas Lorenço Alves",
-		Idade: 38,
-	}
-
 	//Cria um Handler(manipulador) que retorna essa estrutura pessoa em formato JSON
-	http.HandleFunc("/people", func(w http.ResponseWriter, r *http.Request) {
-		//Diz que a resposta será um JSON
-		w.Header().Set("Contente-Type", "application/json")
+	http.HandleFunc("/receber", func(w http.ResponseWriter, r *http.Request) {
 
-		//Converte a estrutura para formato JSON e envia
-		json.NewEncoder(w).Encode(people)
+		//Só Aceita methodo POST
+		if r.Method != http.MethodPost {
+			http.Error(w, "Use POST", http.StatusMethodNotAllowed)
+			fmt.Println("❌ Método inválido:", r.Method)
+			return
+		}
 
-		fmt.Println("✅ Enviei a estrutura")
+		//Cria uma estrutura vazia do tipo pessoa
+		var people Pessoa
+
+		//Ler o JSON que veio do corpo da requisição
+		err:= json.NewDecoder(r.Body).Decode(&people)
+		if err != nil{
+			http.Error(w, "Erro ao ler JSON", http.StatusBadRequest)
+			return
+		}
+
+		//Mostra no console o que recebeu
+		fmt.Printf("📥 Recebi: %s, %d anos\n", people.Nome, people.Idade)
+		
+		//Responde se deu certo
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Recebido com sucesso!"))
+
 	})
 
 	fmt.Println("Servidor rodando")
@@ -40,6 +52,5 @@ func main() {
 
 	//Abre servidor
 	http.ListenAndServe(":8080", nil)
-
 
 }
