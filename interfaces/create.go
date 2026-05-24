@@ -2,11 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 )
-
-
-
 
 func created(w http.ResponseWriter, r *http.Request) {
 	//1. Mecanismo de proteção que irá aceitar somente metodo POST
@@ -34,5 +32,5 @@ func created(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(taskvazia)
-
+	log.Println("criado")
 }
