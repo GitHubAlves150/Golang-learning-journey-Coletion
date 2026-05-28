@@ -1,200 +1,186 @@
 package main
 
 import (
-	"fmt"
-	"log"
-	"os"
+	"fmt"      // Formatação de strings (ex: fmt.Sprintf) fmt → Para formatar a string do endereço (":8080")
+	"log"      // Logs no console (ex: log.Println, log.Fatal) log → Para mostrar mensagens no terminal
+	"net/http" // Constantes HTTP (StatusBadRequest, StatusOK, etc) net/http → Para usar códigos HTTP como 200, 400, 404, etc
 
-	"github.com/labstack/echo/v4"
-	"github.com/spf13/viper"
+	"github.com/labstack/echo/v4" // Framework web Echo echo/v4 → Para criar o servidor web
+	"github.com/spf13/viper"      // Gerenciador de configurações viper → Para ler configurações (porta do servidor)
 )
 
+// ============================================================
+// 🏗️ PARTE 2: MODEL (Estrutura de Dados)
+// ============================================================
+
+type Product struct { //type Product struct → Cria um novo tipo chamado Product
+	ID          int    `json:"id"` //ID int → Campo para o número identificador `json:"id"` → Tag: quando converter para JSON, o campo ID vira "id"
+	Name        string `json:"name"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Image       string `json:"img"`
+}
+
+// "Banco de dados" em memória
+var products []Product
+var nextID = 1 //var nextID = 1 → Próximo ID disponível (começa em 1)
+
+// ============================================================
+// ⚙️ PARTE 3: CONFIGURAÇÃO (Viper)
+// ============================================================
+//Define a estrutura das configurações:
+//  type Config struct → Tipo para guardar configurações
+// Server struct {...} → Configurações do servidor
+// Port int → Porta onde o servidor vai rodar
+// `mapstructure:"port"` → Tag para o Viper mapear o YAML
+// `mapstructure:"server"` → Tag para mapear a seção server do YAML
+
 type Config struct {
-	Server  ServerConfig  `mapstructure:"server"`
-	App     AppConfig     `mapstructure:"app"`
-	Message MessageConfig `mapstructure:"message"`
+	Server struct {
+		Port int `mapstructure:"port"`
+	} `mapstructure:"server"`
 }
 
-type ServerConfig struct {
-	Port int    `mapstructure:"port"`
-	Name string `mapstructure:"name"`
-}
-
-type AppConfig struct {
-	Mode  string `mapstructure:"mode"`
-	Debug bool   `mapstructure:"debug"`
-}
-
-type MessageConfig struct {
-	Welcome string `mapstructure:"welcome"`
-	Health  string `mapstructure:"health"`
-}
-
+// Declaração da função → Retorna ponteiro para Config e possivelmente um erro.
 func loadConfig() (*Config, error) {
-	// 1. Configurar o Viper
+
+	//Cria uma nova instância do Viper → Cada chamada tem seu próprio Viper.
 	v := viper.New()
 
-	// Nome do arquivo de configuração (sem extensão)
-	v.SetConfigName("config.default")
-	v.SetConfigType("yaml")
-	v.AddConfigPath("./config")
-	v.AddConfigPath(".")
+	// 1. Onde procurar as configurações?
+	v.SetConfigName("config")   // Procura por arquivo config.yaml ou config.yml
+	v.SetConfigType("yaml")     // Define o formato como YAML
+	v.AddConfigPath(".")        //Procura na pasta atual
+	v.AddConfigPath("./config") //Procura na subpasta config/
 
-	// 2. Definir valores padrão (fallback)
-	v.SetDefault("server.port", 8080)
-	v.SetDefault("server.name", "Default API")
-	v.SetDefault("app.mode", "production")
-	v.SetDefault("app.debug", false)
-	v.SetDefault("message.welcome", "Bem-vindo!")
-	v.SetDefault("message.health", "OK")
+	v.SetDefault("server.port", 8080) //Define valor padrão → Se não encontrar em nenhum lugar, usa porta 8080.
 
-	// 3. Ler arquivo de configuração (se existir)
+	//Pela ordem de precedência
+	v.AutomaticEnv()                 //AutomaticEnv() → Ativa leitura automática de env vars
+	v.BindEnv("server.port", "PORT") //BindEnv("server.port", "PORT") → A chave server.port pode vir da env PORT
+
+	//Tenta ler o arquivo de configuração → Se não encontrar, só avisa e usa valores padrão.
 	if err := v.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			log.Println("⚠️ Arquivo de configuração não encontrado, usando padrões")
-		} else {
-			return nil, fmt.Errorf("erro ao ler arquivo: %w", err)
-		}
+		log.Println("⚠️ Arquivo de config não encontrado, usando padrões")
 	}
 
-	// 4. Configurar variáveis de ambiente
-	v.SetEnvPrefix("APP")
-	v.AutomaticEnv()
-
-	// Mapear variáveis de ambiente para chaves do Viper
-	v.BindEnv("server.port", "SERVER_PORT")
-	v.BindEnv("app.mode", "APP_MODE")
-	v.BindEnv("app.debug", "APP_DEBUG")
-	v.BindEnv("message.welcome", "WELCOME_MESSAGE")
-
-	// 5. Parsear para struct
+	//Ler e guardar na struct config
 	var config Config
-	if err := v.Unmarshal(&config); err != nil {
-		return nil, fmt.Errorf("erro ao parsear config: %w", err)
-	}
 
+	//Unmarshal(&config) → Preenche a struct com os valores do Viper
+	if err := v.Unmarshal(&config); err != nil {
+		return nil, err
+
+	}
+	//Devolver as configurações
 	return &config, nil
 }
 
-func setupServer(cfg *Config) *echo.Echo {
-	e := echo.New()
+// ============================================================
+// 🎮 PARTE 4: HANDLERS (Lógica das Rotas)
+// ============================================================
+// CreateProdutc - POST /products
+// Declaração do handler → Recebe c echo.Context e retorna error.
+func createProducts(c echo.Context) error {
+	//1. Cria um produto vazio
+	var newProduct Product
 
-	// Middleware para log das requisições
-	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			log.Printf("📡 %s %s", c.Request().Method, c.Request().URL.Path)
-			return next(c)
-		}
+	//2. Extrair os dados do JSON que veio na requisição e coloca em newproduct
+	//c.Bind(&newProduct) → Converte o JSON recebido para a struct
+	if err := c.Bind(&newProduct); err != nil { //c.Bind tira o pedido vindo da requisição e coloca em newProduct
+		//Devolve um status bad request 400 se caso for nil
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "Dados inválidos: " + err.Error(),
+		})
+	}
+	log.Println(">>>", newProduct.Title) //Isso prova que o c.Bind extraiu os dados da requisição
+	//3.validar dados obrigatórios - um deles é o nome que não pode vir vazio
+	if newProduct.Name == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "O campo nome é obrigatório",
+		})
+	}
+
+	//4.Gerar ID Automático
+	newProduct.ID = nextID
+	nextID++
+
+	//5. Adicionar ao banco de dados (Memória local para este exemplo)
+	products = append(products, newProduct)
+
+	//6. Retornar o produto criado (status 201 Created)
+	return c.JSON(http.StatusCreated, map[string]interface{}{
+		"message": "produto criado com sucesso",
+		"product": newProduct,
 	})
 
-	// Middleware de debug (se ativado)
-	if cfg.App.Debug {
-		e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-			return func(c echo.Context) error {
-				log.Println("🔧 Modo DEBUG ativado")
-				c.Response().Header().Set("X-Debug-Mode", "true")
+}
+
+func listProducts(c echo.Context) error {
+	//c.JSON() → Converte o map para JSON e envia ao cliente
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"products":      products,
+		"count":         len(products),
+		"Qualquercoisa": "opaaa",
+	})
+}
+
+// ============================================================
+// 🔧 PARTE 5: SETUP DO SERVIDOR
+// ============================================================
+
+func setupServer() *echo.Echo {
+	//Cria uma nova instância do servidor Echo.
+	e := echo.New()
+
+	//Middleware de log
+	//Adiciona um middleware (função que roda antes de cada requisição):
+	//e.Use() → Registra um middleware
+	e.Use(
+		func(next echo.HandlerFunc) echo.HandlerFunc { //A função recebe next (próximo handler)
+			return func(c echo.Context) error { //Retorna uma função que loga o método e a URL
+				log.Println("...", c.Request().Method, c.Request().URL.Path)
 				return next(c)
 			}
 		})
-	}
 
-	// Rotas
-	e.GET("/", welcomeHandler(cfg))
-	e.GET("/health", healthHandler(cfg))
-	e.GET("/config", configHandler(cfg))
+	//Rotas
+	//e.POST("/products", createProducts) → Quando receber POST em /products, chama createProducts
+	e.POST("/products", createProducts)
+	//e.GET("/products", listProducts) → Quando receber GET em /products, chama listProducts
+	e.GET("/products", listProducts)
 
-	// Grupo de rotas admin (só disponível em debug)
-	if cfg.App.Debug {
-		admin := e.Group("/admin")
-		admin.GET("/info", adminInfoHandler(cfg))
-		admin.GET("/reload", reloadConfigHandler(cfg))
-	}
-
+	//Retorna o servidor configurado.
 	return e
+
 }
 
 // ============================================================
-// Handlers
-// ============================================================
-
-func welcomeHandler(cfg *Config) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		return c.JSON(200, map[string]interface{}{
-			"message": cfg.Message.Welcome,
-			"server":  cfg.Server.Name,
-			"mode":    cfg.App.Mode,
-		})
-	}
-}
-
-func healthHandler(cfg *Config) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		return c.JSON(200, map[string]interface{}{
-			"status":  "ok",
-			"message": cfg.Message.Health,
-		})
-	}
-}
-
-func configHandler(cfg *Config) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		return c.JSON(200, cfg)
-	}
-}
-
-func adminInfoHandler(cfg *Config) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		return c.JSON(200, map[string]interface{}{
-			"config":         cfg,
-			"environment":    os.Environ(),
-			"viper_all_keys": viper.AllKeys(),
-		})
-	}
-}
-
-func reloadConfigHandler(cfg *Config) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		// Recarregar configuração (simulação)
-		return c.JSON(200, map[string]string{
-			"message": "Recarga de config seria feita aqui",
-		})
-	}
-}
-
-// ============================================================
-// Main
+// 🚀 PARTE 6: FUNÇÃO PRINCIPAL (main)
 // ============================================================
 
 func main() {
-	log.Println("🚀 Iniciando aplicação...")
 
-	// Carregar configuração
-	cfg, err := loadConfig()
+	//Carregar as configurações
+	config, err := loadConfig()
 	if err != nil {
-		log.Fatalf("❌ Erro fatal ao carregar configuração: %v", err)
+		log.Fatal("Erro ao carregar as configurações: ", err)
+
 	}
 
-	log.Printf("📋 Configuração carregada:")
-	log.Printf("   Servidor: %s (porta %d)", cfg.Server.Name, cfg.Server.Port)
-	log.Printf("   Modo: %s, Debug: %t", cfg.App.Mode, cfg.App.Debug)
+	//Cria o servidor
+	server := setupServer()
 
-	// Configurar e iniciar servidor
-	server := setupServer(cfg)
+	//Iniciar
+	addr := fmt.Sprintf(":%d", config.Server.Port)
 
-	// Iniciar
-	addr := fmt.Sprintf(":%d", cfg.Server.Port)
-	log.Printf("🌐 Servidor iniciado em http://localhost%s", addr)
-	log.Println("📡 Endpoints disponíveis:")
-	log.Println("   GET /           - Página inicial")
-	log.Println("   GET /health     - Health check")
-	log.Println("   GET /config     - Ver configurações atuais")
-
-	if cfg.App.Debug {
-		log.Println("   GET /admin/info - Informações de debug")
-		log.Println("   GET /admin/reload - Recarregar config")
-	}
+	log.Printf("Servidor rodando em http://localhost:%s", addr)
+	log.Printf("Endpoints:")
+	log.Printf("  POST /products       -Criar produto")
+	log.Printf("  GET  /products       -Listar produto")
 
 	if err := server.Start(addr); err != nil {
-		log.Fatalf("❌ Servidor falhou: %v", err)
+		log.Fatal("Servidor falhou ", err)
 	}
+
 }
