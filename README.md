@@ -881,5 +881,3 @@ Goroutine no back-end?	Roda requisições, I/O, tarefas assíncronas
 Leigo → goroutine?	Vários atendentes leves no restaurante
 Engenharia → goroutine?	Contexto leve (2KB stack), mapeamento M:N, preempção
 
-Se quiser, posso mostrar exemplos práticos de concorrência vs paralelismo com código Go.
-=======
