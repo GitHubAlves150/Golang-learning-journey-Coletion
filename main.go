@@ -1,58 +1,87 @@
-package main    
+package main
 
-import(
-    "fmt"
+import (
+	"fmt"
+	"strings"
 )
 
-//Mesma interface de branch Topics/interface_basica
-type Animal interface{
-    EmitirSom() string
+// Interface para veiculo
+type Veiculo interface {
+	Mover() string
+	GetNome() string
 }
 
-//Implementação 1
-type Cachorro struct{
-    Nome string
+// implementação 1
+type Carro struct {
+	Modelo string
+    Marca string
 }
 
-func (c Cachorro) EmitirSom() string{
-    return "Au-Au" + c.Nome
+func (c Carro) Mover() string {
+	return "Carro acelerando"
 }
 
-//Implementação 2
-type Gato struct{
-    Nome string
+func (c Carro) GetNome() string {
+	return c.Modelo
 }
 
-func (g Gato)EmitirSom()string{
-    return "Miau" + g.Nome
+// Implementação 2
+type Moto struct {
+	Modelo string
 }
 
-//Implementação 3
-type Vaca struct{
-    Nome string
+func (m Moto) Mover() string {
+	return "🏍️ Moto empinando"
+}
+func (m Moto) GetNome() string {
+	return m.Modelo
 }
 
-func (v Vaca)EmitirSom()string{
-    return "Muuuu" + v.Nome
+//=============================================
+//FUNCOES GENERICAS (Aceitam qualquer veículo)
+//=============================================
+
+// Função que recebe QUALQUER veículo
+func IniciaCorrida(veiculos []Veiculo) {
+	fmt.Println("Corrida Iniciada")
+	for _, valores := range veiculos {
+		fmt.Println("..", valores.GetNome(), valores.Mover())
+	}
+
 }
 
-
-//Função que aceita qualquer animal
-func FazerBarulho(animal Animal){
-    fmt.Println(animal.EmitirSom())
+// Função que retorna QUALQUER veículo
+func EscolherVeiculo(tipo string) Veiculo { //devolve uma inteface
+	if tipo == "Carro" {
+		return Carro{Modelo: "Wolksvager"}
+	}
+	return Moto{Modelo: "Biz"}
 }
 
+func main() {
+
+	//Exemplo 1: Slice de veículo (Aceita carro e moto juntos)
+	vehicle := []Veiculo{
+		Carro{Modelo: "BYD", Marca: "Ainda nao sei"},
+		Moto{Modelo: "Yamaha"},
+		Carro{Modelo: "Fusca"},
+	}
+	
+    //f := vehicle[0].(Carro)	
+    //fmt.Println("Modelo", vehicle[0].Mover()) // Caso queira ver como se os membros de dados de cada indice
+
+    fmt.Println(strings.Repeat("=", 10) )
+
+    IniciaCorrida(vehicle)
 
 
-func main(){
+    fmt.Println(strings.Repeat("=", 10) )
 
-    cachorro := Cachorro{Nome:"Dog 1"}
-    gato := Gato{Nome: "Cat 1"}
-    vaca:= Vaca{Nome: "Cow 1"}
+    v1:= EscolherVeiculo("Carro");
+    v2:= EscolherVeiculo("Moto");
 
-    //Todas funcionam por que implementam Animal
-    FazerBarulho(cachorro);
-    FazerBarulho(gato);
-    FazerBarulho(vaca);
+    fmt.Println("Escolhi: ", v1.GetNome(), v1.Mover());
+    fmt.Println("Escolhi: ", v2.GetNome(), v2.Mover());
+
 
 }
