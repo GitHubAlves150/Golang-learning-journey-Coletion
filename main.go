@@ -1,77 +1,102 @@
+// 5_interface_vazia.go
 package main
 
-import (
-	"fmt"
-	"strings"
-)
+import "fmt"
 
-//==============================================
-//INTERFACE DO GPS
-//==============================================
-
-// Qualquer fonte de GPS deve ter este método
-type FonteGPS interface {
-	ObterPosicao() (lat, long float64)
-}
-
-//==============================================
-//IMPLEMENTAÇÕES DA INTERFACES
-//==============================================
-
-// 1. GPS real (hardware L76K)
-type GPSL76K struct {
-	PortaString string
-}
-
-func (g GPSL76K) ObterPosicao() (float64, float64) {
-	fmt.Println("Lendo GPS real na porta: ", g.PortaString)
-	// simula leitura do hardware
-	return -23.5543, -65.3433
-}
-
-// 2. GPS Simulado (para testes)
-type GPSMock struct {
-	Lat, Long float64
-}
-
-func (g GPSMock) ObterPosicao() (float64, float64) {
-	fmt.Println("Usando GPS simulado para testes")
-	return g.Lat, g.Long
-}
-
-//==============================================
-//Funçoes que usam a interface
-//==============================================
-
-// Esta função funciona com QUALQUER FonteGPS
-func ColetarLocalizacao(gps FonteGPS, veiculoID string) {
-	fmt.Println("Coletando posicao do veiculo: ", veiculoID)
-
-	lat, lon := gps.ObterPosicao()
-
-	fmt.Println("Posicao: ", lat, " / ", lon)
-	fmt.Println("Locailização coletada com sucesso")
-
-}
+// Interface vazia = aceita QUALQUER tipo
+type QualquerCoisa interface{}
 
 func main() {
+    // ========================================
+    // Exemplo 1: interface{} aceita qualquer tipo
+    // ========================================
+    var x interface{}
+    
+    x = 42
+    fmt.Printf("x é %v, tipo %T\n", x, x)
+    
+    x = "hello"
+    fmt.Printf("x é %v, tipo %T\n", x, x)
+    
+    x = true
+    fmt.Printf("x é %v, tipo %T\n", x, x)
+    
+    x = struct{ Nome string }{Nome: "João"}
+    fmt.Printf("x é %v, tipo %T\n", x, x)
+    
+    // ========================================
+    // Exemplo 2: Type Assertion (converter de volta)
+    // ========================================
+    fmt.Println("\n--- Type Assertion ---")
+    
+    var y interface{} = 100
+    
+    // Tentar converter para int
+    valorInteiro, ok := y.(int)
+    if ok {
+        fmt.Printf("É um int! Valor: %d\n", valorInteiro)
+    } else {
+        fmt.Println("Não é um int")
+    }
+    
+    // Tentar converter para string (vai falhar)
+    valorString, ok := y.(string)
+    if ok {
+        fmt.Printf("É uma string! Valor: %s\n", valorString)
+    } else {
+        fmt.Println("Não é uma string")
+    }
+    
+    // ========================================
+    // Exemplo 3: Type Switch
+    // ========================================
+    fmt.Println("\n--- Type Switch ---")
+    
+    tipos := []interface{}{42, "texto", true, 3.14, struct{ Nome string }{Nome: "João"}}
+    
+    for _, t := range tipos {
+        switch v := t.(type) {
+        case int:
+            fmt.Printf("Inteiro: %d\n", v)
+        case string:
+            fmt.Printf("String: %s\n", v)
+        case bool:
+            fmt.Printf("Booleano: %t\n", v)
+        case float64:
+            fmt.Printf("Float: %.2f\n", v)
+        default:
+            fmt.Printf("Tipo desconhecido: %T\n", v)
+        }
+    }
+    
+    // ========================================
+    // Exemplo 4: Aplicação prática
+    // ========================================
+    fmt.Println("\n--- Aplicação prática: Processador genérico ---")
+    
+    dados := []interface{}{
+        42,
+        "latitude: -23.5505",
+        true,
+        struct{ Lat, Lon float64 }{Lat: -23.5505, Lon: -46.6333},
+    }
+    
+    for _, dado := range dados {
+        ProcessarDado(dado)
+    }
+}
 
-	fmt.Println(strings.Repeat("=", 50))
-	fmt.Println("RASTREADOR COM INTERFACE")
-
-	// Cenário 1: Hardware real
-	gpsReal := GPSL76K{PortaString: "/dev/ttyACM0"}
-	ColetarLocalizacao(gpsReal, "ESP32-001")
-
-	fmt.Println(strings.Repeat("=", 50))
-
-	gpsMockup := GPSMock{Lat: -55.6544, Long: -43.2233}
-	ColetarLocalizacao(gpsMockup, "ESP32-0002")
-
-    fmt.Println("\nMesma função comportamento doferente\n")
-
-    ColetarLocalizacao(gpsReal, "Carro-ABC")
-    ColetarLocalizacao(gpsMockup, "Carro-xyz")
-
-
+func ProcessarDado(dado interface{}) {
+    switch v := dado.(type) {
+    case int:
+        fmt.Printf("📊 Processando número: %d\n", v)
+    case string:
+        fmt.Printf("📝 Processando texto: %s\n", v)
+    case bool:
+        fmt.Printf("✅✅ Processando booleano: %t\n", v)
+    case struct{ Lat, Lon float64 }:
+        fmt.Printf("📍 Processando coordenada: [%.6f, %.6f]\n", v.Lat, v.Lon)
+    default:
+        fmt.Printf("❓ Tipo desconhecido: %T\n", v)
+    }
 }
