@@ -1,102 +1,122 @@
-// 5_interface_vazia.go
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
-// Interface vazia = aceita QUALQUER tipo
-type QualquerCoisa interface{}
+//============================================
+//INTERFACE INDIVIDUAIS
+//============================================
 
-func main() {
-    // ========================================
-    // Exemplo 1: interface{} aceita qualquer tipo
-    // ========================================
-    var x interface{}
-    
-    x = 42
-    fmt.Printf("x é %v, tipo %T\n", x, x)
-    
-    x = "hello"
-    fmt.Printf("x é %v, tipo %T\n", x, x)
-    
-    x = true
-    fmt.Printf("x é %v, tipo %T\n", x, x)
-    
-    x = struct{ Nome string }{Nome: "João"}
-    fmt.Printf("x é %v, tipo %T\n", x, x)
-    
-    // ========================================
-    // Exemplo 2: Type Assertion (converter de volta)
-    // ========================================
-    fmt.Println("\n--- Type Assertion ---")
-    
-    var y interface{} = 100
-    
-    // Tentar converter para int
-    valorInteiro, ok := y.(int)
-    if ok {
-        fmt.Printf("É um int! Valor: %d\n", valorInteiro)
-    } else {
-        fmt.Println("Não é um int")
-    }
-    
-    // Tentar converter para string (vai falhar)
-    valorString, ok := y.(string)
-    if ok {
-        fmt.Printf("É uma string! Valor: %s\n", valorString)
-    } else {
-        fmt.Println("Não é uma string")
-    }
-    
-    // ========================================
-    // Exemplo 3: Type Switch
-    // ========================================
-    fmt.Println("\n--- Type Switch ---")
-    
-    tipos := []interface{}{42, "texto", true, 3.14, struct{ Nome string }{Nome: "João"}}
-    
-    for _, t := range tipos {
-        switch v := t.(type) {
-        case int:
-            fmt.Printf("Inteiro: %d\n", v)
-        case string:
-            fmt.Printf("String: %s\n", v)
-        case bool:
-            fmt.Printf("Booleano: %t\n", v)
-        case float64:
-            fmt.Printf("Float: %.2f\n", v)
-        default:
-            fmt.Printf("Tipo desconhecido: %T\n", v)
-        }
-    }
-    
-    // ========================================
-    // Exemplo 4: Aplicação prática
-    // ========================================
-    fmt.Println("\n--- Aplicação prática: Processador genérico ---")
-    
-    dados := []interface{}{
-        42,
-        "latitude: -23.5505",
-        true,
-        struct{ Lat, Lon float64 }{Lat: -23.5505, Lon: -46.6333},
-    }
-    
-    for _, dado := range dados {
-        ProcessarDado(dado)
-    }
+type Localizavel interface {
+	ObterCoordenadas() (lat, lon float64)
 }
 
-func ProcessarDado(dado interface{}) {
-    switch v := dado.(type) {
-    case int:
-        fmt.Printf("📊 Processando número: %d\n", v)
-    case string:
-        fmt.Printf("📝 Processando texto: %s\n", v)
-    case bool:
-        fmt.Printf("✅✅ Processando booleano: %t\n", v)
-    case struct{ Lat, Lon float64 }:
-        fmt.Printf("📍 Processando coordenada: [%.6f, %.6f]\n", v.Lat, v.Lon)
-    default:
-        fmt.Printf("❓ Tipo desconhecido: %T\n", v)
+type Velocidade interface {
+	ObterVelocidade() float64
+}
+
+type Direcao interface {
+	ObterDirecao() float64
+}
+
+// ============================================
+// COMPOSIÇÃO: Interface que COMBINA outras
+// ============================================
+// Rastreador completo tem TODOS os métodos das interfaces acima
+type RastreadorCompleto interface {
+	Localizavel //Tem ObterCoordenadas
+	Velocidade  //Tem ObterVelocidade
+	Direcao     //Tem ObterDireção
+
+	//Dá para adicionar mpetodos próprios
+	GetID() string
+}
+
+// ============================================
+// IMPLEMENTAÇÃO
+// ============================================
+// --Tipo comcreto
+type RastreadorReal struct {
+	ID         string
+	UltimaLat  float64
+	UltimaLon  float64
+	Velocidade float64
+	Direcao    float64
+}
+
+// Implementação
+func (r RastreadorReal) ObterCoordenadas() (float64, float64) {
+	return r.UltimaLat, r.UltimaLon
+}
+
+func (v RastreadorReal) ObterVelocidade() float64 {
+	return v.Velocidade
+}
+
+func (d RastreadorReal) ObterDirecao() float64 {
+	return d.Direcao
+}
+
+func (r RastreadorReal) GetID() string {
+	return r.ID
+}
+
+// ============================================
+// Funções que usam as interfaces
+// ============================================
+
+// Função que só precisa de localização
+func MostrarLocal(locallizavel Localizavel) {
+	lat, lon := locallizavel.ObterCoordenadas()
+	fmt.Printf("\nLocalização:%.4f, %.4f ", lat, lon)
+}
+
+// Função que precisa de tudo (rastreador completo)
+func MostrarStatusCompleto(rastrear RastreadorCompleto) {
+	fmt.Println("\n=====STATUS COMPLETO==========")
+	fmt.Printf("\nID: %s", rastrear.GetID())
+
+	lat, lon := rastrear.ObterCoordenadas()
+	fmt.Printf("\nPosição [%.4f - %.4f]", lat, lon)
+
+	fmt.Printf("\nvelocidade: %.1f", rastrear.ObterVelocidade())
+	fmt.Printf("\nDireção: %.1f", rastrear.ObterDirecao())
+	fmt.Printf(strings.Repeat("=", 50))
+}
+
+func main() {
+	rastreador := RastreadorReal{
+	ID:           "ES",
+	UltimaLat:   -32.2222,
+	UltimaLon:   -45.5555,
+	Velocidade:  34.2,
+	Direcao:     84.3,
+	}
+
+	//RastreadorReal implementa Localizavel (porque tem ObterCoordenadas)
+	MostrarLocal(rastreador)
+
+	//RastreadorReal implementa RastreadorCompleto (tem todos os métodos)
+	MostrarStatusCompleto(rastreador)
+
+
+	// ========================================
+    // DEMONSTRAÇÃO DE FLEXIBILIDADE
+    // ========================================
+
+	fmt.Printf("\n--Flexibilidade: Funções aceitam diferentes interfaces --")
+
+	//Função que aceita Localizavel (pode ser qualquer coisa com coordenadas)
+	coordenadas := []Localizavel{
+        rastreador,
+         // struct anônima
     }
+
+	for _, valores:= range coordenadas{
+		//fmt.Printf("|", valores)
+		MostrarLocal(valores)
+	}
+
 }
