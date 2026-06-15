@@ -5,83 +5,73 @@ import (
 	"strings"
 )
 
-// Interface para veiculo
-type Veiculo interface {
-	Mover() string
-	GetNome() string
+//==============================================
+//INTERFACE DO GPS
+//==============================================
+
+// Qualquer fonte de GPS deve ter este método
+type FonteGPS interface {
+	ObterPosicao() (lat, long float64)
 }
 
-// implementação 1
-type Carro struct {
-	Modelo string
-    Marca string
+//==============================================
+//IMPLEMENTAÇÕES DA INTERFACES
+//==============================================
+
+// 1. GPS real (hardware L76K)
+type GPSL76K struct {
+	PortaString string
 }
 
-func (c Carro) Mover() string {
-	return "Carro acelerando"
+func (g GPSL76K) ObterPosicao() (float64, float64) {
+	fmt.Println("Lendo GPS real na porta: ", g.PortaString)
+	// simula leitura do hardware
+	return -23.5543, -65.3433
 }
 
-func (c Carro) GetNome() string {
-	return c.Modelo
+// 2. GPS Simulado (para testes)
+type GPSMock struct {
+	Lat, Long float64
 }
 
-// Implementação 2
-type Moto struct {
-	Modelo string
+func (g GPSMock) ObterPosicao() (float64, float64) {
+	fmt.Println("Usando GPS simulado para testes")
+	return g.Lat, g.Long
 }
 
-func (m Moto) Mover() string {
-	return "🏍️ Moto empinando"
-}
-func (m Moto) GetNome() string {
-	return m.Modelo
-}
+//==============================================
+//Funçoes que usam a interface
+//==============================================
 
-//=============================================
-//FUNCOES GENERICAS (Aceitam qualquer veículo)
-//=============================================
+// Esta função funciona com QUALQUER FonteGPS
+func ColetarLocalizacao(gps FonteGPS, veiculoID string) {
+	fmt.Println("Coletando posicao do veiculo: ", veiculoID)
 
-// Função que recebe QUALQUER veículo
-func IniciaCorrida(veiculos []Veiculo) {
-	fmt.Println("Corrida Iniciada")
-	for _, valores := range veiculos {
-		fmt.Println("..", valores.GetNome(), valores.Mover())
-	}
+	lat, lon := gps.ObterPosicao()
 
-}
+	fmt.Println("Posicao: ", lat, " / ", lon)
+	fmt.Println("Locailização coletada com sucesso")
 
-// Função que retorna QUALQUER veículo
-func EscolherVeiculo(tipo string) Veiculo { //devolve uma inteface
-	if tipo == "Carro" {
-		return Carro{Modelo: "Wolksvager"}
-	}
-	return Moto{Modelo: "Biz"}
 }
 
 func main() {
 
-	//Exemplo 1: Slice de veículo (Aceita carro e moto juntos)
-	vehicle := []Veiculo{
-		Carro{Modelo: "BYD", Marca: "Ainda nao sei"},
-		Moto{Modelo: "Yamaha"},
-		Carro{Modelo: "Fusca"},
-	}
-	
-    //f := vehicle[0].(Carro)	
-    //fmt.Println("Modelo", vehicle[0].Mover()) // Caso queira ver como se os membros de dados de cada indice
+	fmt.Println(strings.Repeat("=", 50))
+	fmt.Println("RASTREADOR COM INTERFACE")
 
-    fmt.Println(strings.Repeat("=", 10) )
+	// Cenário 1: Hardware real
+	gpsReal := GPSL76K{PortaString: "/dev/ttyACM0"}
+	ColetarLocalizacao(gpsReal, "ESP32-001")
 
-    IniciaCorrida(vehicle)
+	fmt.Println(strings.Repeat("=", 50))
 
+	gpsMockup := GPSMock{Lat: -55.6544, Long: -43.2233}
+	ColetarLocalizacao(gpsMockup, "ESP32-0002")
 
-    fmt.Println(strings.Repeat("=", 10) )
+    fmt.Println("\nMesma função comportamento doferente\n")
 
-    v1:= EscolherVeiculo("Carro");
-    v2:= EscolherVeiculo("Moto");
-
-    fmt.Println("Escolhi: ", v1.GetNome(), v1.Mover());
-    fmt.Println("Escolhi: ", v2.GetNome(), v2.Mover());
+    ColetarLocalizacao(gpsReal, "Carro-ABC")
+    ColetarLocalizacao(gpsMockup, "Carro-xyz")
 
 
 }
