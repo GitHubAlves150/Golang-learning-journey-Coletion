@@ -2,44 +2,90 @@ package main
 
 import (
 	"fmt"
-	"math/rand"
 	"sync"
 	"time"
 )
 
-// Simula um veiculo enviando dados de GPS
-func EnviandoVeiculos(veiculoID int, wg *sync.WaitGroup) {
+// Simula um banco de dados compartilhado
+type BancoDados struct {
+	UltimaPosicao map[string]string
+	mu            sync.Mutex //Protege o map
+}
+
+func (db *BancoDados) SalvarPosicao(veiculoID, posicao string) {
+	db.mu.Lock()         //Trava (só uma gouroutine por vez)
+	defer db.mu.Unlock() //Destrava
+
+	//Zona crítica (só uma goroutine)
+	db.UltimaPosicao[veiculoID] = posicao
+	fmt.Printf("\nSalvo: %s -> %s\n", veiculoID, posicao)
+}
+
+func (db *BancoDados) LerPosicao(veiculoID string) string {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
+	return db.UltimaPosicao[veiculoID]
+}
+
+func EnviaDados(db *BancoDados, veiculoID string, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	//Simula 3 leituras de GPS
-	for leitura := 0; leitura <= 3; leitura++ {
-		lat := -23.5 + rand.Float64()
-		lon := -45.3 + rand.Float64()
-		velocidade := rand.Float64() * 100
-		fmt.Printf("\nVelocidade do veiculo %d [Leitura %d]: lat: %.4f, lon: %.4f, velocidade: %.1f km/h", veiculoID, leitura, lat, lon, velocidade)
-		time.Sleep(100 * time.Millisecond) //Simula intervalo entre as leituras
+	count := 2
+	for i := 0; i < count; i++ {
+		posicao := fmt.Sprintf("Leitura %d: lat: -23.44  lon: -32.333", i)
+		db.SalvarPosicao(veiculoID, posicao)
+		time.Sleep(100 * time.Millisecond)
 	}
-	fmt.Printf("\nveiculo %d finalizou suas leituras.\n", veiculoID)
-
 }
 
 func main() {
 
-	fmt.Println("=== RASTREADOR COM MÚLTIPLOS VEÍCULOS ===\n")
-	var wg sync.WaitGroup
-
-	numeroDeVeiculos := 3
-
-	//Inicia Varios veiculos em paralelos
-	for i := 0; i <= numeroDeVeiculos; i++ {
-		wg.Add(1) //diz quantas goo deve ser chamadas. Como está num FOR, entçao serṕa chamada uma por vez
-		go EnviandoVeiculos(i, &wg)
-		//time.Sleep(1 * time.Second) //Simula intervalo entre as leituras
-
+	fmt.Println("=== MUTEX: PROTEGENDO DADOS COMPARTILHADOS ===\n")
+	db:= &BancoDados{
+		UltimaPosicao: make(map[string]string),
 	}
 
-	fmt.Printf("\nTodos os vecículos estçao enviando dados simultaneamente\n")
+	var wg sync.WaitGroup
+
+	//10 veiculos tentando salvar no mesmo banco de dados ao mesmo tempo
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+
+		veiculoID := fmt.Sprintf("Car-%03d", i)
+		go EnviaDados(db, veiculoID, &wg)
+	}
 	wg.Wait()
-	fmt.Println("\n🎉 Todos os veículos finalizaram o envio!\n")
+
+	fmt.Println("\nDados finais salvos\n")
+	for id, pos:= range db.UltimaPosicao{
+		fmt.Printf("\n  %s: %s \n", id, pos)
+	}
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
