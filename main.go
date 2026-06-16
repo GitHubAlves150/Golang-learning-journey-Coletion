@@ -1,44 +1,66 @@
-// exercicio1_frota.go
 package main
 
 import (
-    "fmt"
-    "sync"
-    "time"
+	"fmt"
+	"math/rand"
+	"sync"
+	"time"
 )
 
-type Veiculo struct {
-    ID    string
-    Tempo int // tempo de processamento em ms
+/*
+Cenário
+
+Você tem 20 veículos que precisam ser processados. Cada veículo tem um ID (de 1 a 20) e um tempo de processamento variável (entre 100ms e 1000ms).
+O que o sistema deve fazer
+
+    Processar os veículos em PARALELO (usando goroutines)
+
+    Manter um contador global de quantos veículos já foram processados (usando mutex)
+
+    Exibir quando cada veículo começar e terminar
+
+    Ao final, exibir o tempo total de processamento e o contador final
+*/
+
+type Processador struct {
+	contador int        //total de veículos  procesados
+	mu       sync.Mutex //Protege o contador
 }
 
-func processarVeiculo(v Veiculo, wg *sync.WaitGroup) {
-    defer wg.Done()
-    
-    fmt.Printf("🚗 Processando %s (%dms)\n", v.ID, v.Tempo)
-    time.Sleep(time.Duration(v.Tempo) * time.Second)
-    fmt.Printf("✅ %s concluído\n", v.ID)
+func (p *Processador) ProcessadorVeiculo(veiculoID, tempoMS int, wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	fmt.Printf("\nVeiculo %d iniciou | TempoMS %d\n", veiculoID, tempoMS)
+	time.Sleep(time.Duration(tempoMS) * time.Millisecond)
+	
+	p.mu.Lock()
+	p.contador += 1
+    p.mu.Unlock()
+
+	fmt.Printf("\nVeiculo %d TERMINOU\n", veiculoID)
+
 }
 
 func main() {
-    frota := []Veiculo{
-        {"CAR-001", 10},
-        {"CAR-002", 5},
-        {"CAR-003", 2},
-        {"CAR-004", 3},
-        {"CAR-005", 1},
-    }
-    
-    var wg sync.WaitGroup
-    inicio := time.Now()
-    
-    for _, v := range frota {
-        wg.Add(1)
-        go processarVeiculo(v, &wg)
-    }
-    
-    wg.Wait()
-    
-    fmt.Printf("\n🎉 Frota processada em %v\n", time.Since(inicio))
-    fmt.Println("💡 Se fosse sequencial, demoraria a soma de todos os tempos!")
+
+	inicio := time.Now()
+
+	processador := &Processador{
+		contador: 0,
+	}
+
+	var wg sync.WaitGroup
+
+	// Criar 20 veículos com tempos aleatórios
+	for i := 1; i <= 20; i++ {
+		wg.Add(1)
+		tempoMs := rand.Intn(900) + 100 // 100 a 1000ms
+
+		go processador.ProcessadorVeiculo(i, tempoMs, &wg)
+	}
+
+	wg.Wait()
+	fmt.Println("Demorou- ", time.Since(inicio) )
+	fmt.Printf("Total de veiculos processados %d\n", processador.contador)
+
 }
