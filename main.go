@@ -1,4 +1,3 @@
-// 1_select_basico.go
 package main
 
 import (
@@ -13,43 +12,83 @@ type Telemetria struct {
 	Lat       float64
 }
 
+type Clima struct {
+	VentoNorte int
+	VentoSul   int
+}
+
 func main() {
-
-	//crio canal
 	canal1 := make(chan Telemetria)
+	canal2 := make(chan Clima)
 
-	//Simula veiculos enviando dados
+	// Produtor 1: Telemetria
 	go func() {
-		//laço for
-		for i := 0; i < 10; i++ {
+		for i := 0; i < 5; i++ {
 			leitura := Telemetria{
 				VeiculoID: i,
-				Lon:       -23.5 + rand.Float64(),
-				Lat:       -43.55 + rand.Float64(),
+				Lat:       -34.4 + rand.Float64(),
+				Lon:       -33.2 + rand.Float64(),
 			}
-			canal1 <- leitura //envia uma estrutura por vez
-			time.Sleep(500 * time.Millisecond)
+			canal1 <- leitura
+			fmt.Printf("📡 Telemetria %d enviada\n", i)
+			time.Sleep(3 * time.Second)
 		}
+		fmt.Println("✅ Produtor 1 finalizou")
 		close(canal1)
 	}()
 
-	//processa o timeout
-	
-	for{  //è igual ao while(1)
-		select {
-
-		case leitura, ok := <-canal1:
-			if !ok {
-				fmt.Println("\nCanal fechado")
-				return
+	// Produtor 2: Clima
+	go func() {
+		for i := 0; i < 5; i++ {
+			leituraClima := Clima{
+				VentoNorte: 23 + i,
+				VentoSul:   22 + i,
 			}
-			fmt.Printf("\nveiculo %d: Lat: %.4f - Lon: %.4f", leitura.VeiculoID, leitura.Lat, leitura.Lon)
+			canal2 <- leituraClima
+			fmt.Printf("🌤️  Clima %d enviado\n", i)
+			time.Sleep(3 * time.Second)
+		}
+		fmt.Println("✅ Produtor 2 finalizou")
+		close(canal2)
+	}()
 
-		case <-time.After(2 * time.Second):
-			fmt.Println("nenhum dado recebido po 2 segundos")
+	// Processador central
+	canal1Fechado := false
+	canal2Fechado := false
+
+	for {
+		// Se ambos os canais estiverem fechados, sai do loop
+		if canal1Fechado && canal2Fechado {
+			fmt.Println("\n🎉 Todos os dados processados!")
+			break
+		}
+
+		select {
+		case msg, ok := <-canal1:
+			if !ok {
+				if !canal1Fechado {
+					fmt.Println("📭 Canal 1 fechado")
+					canal1Fechado = true
+				}
+				continue
+			}
+			fmt.Printf("📍 [Canal 1] Veículo %d: Lat=%.4f, Lon=%.4f\n",
+				msg.VeiculoID, msg.Lat, msg.Lon)
+
+		case msg, ok := <-canal2:
+			if !ok {
+				if !canal2Fechado {
+					fmt.Println("📭 Canal 2 fechado")
+					canal2Fechado = true
+				}
+				continue
+			}
+			fmt.Printf("🌤️  [Canal 2] Vento Sul=%d, Vento Norte=%d\n",
+				msg.VentoSul, msg.VentoNorte)
+
+		case <-time.After(4 * time.Second): // ← 4 segundos (maior que 3)
+			fmt.Println("⏰ Timeout: nenhum dado recebido em 4 segundos")
 			return
 		}
 	}
-
-
 }
