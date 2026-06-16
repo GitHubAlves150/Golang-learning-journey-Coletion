@@ -1,91 +1,44 @@
+// exercicio1_frota.go
 package main
 
 import (
-	"fmt"
-	"sync"
-	"time"
+    "fmt"
+    "sync"
+    "time"
 )
 
-// Simula um banco de dados compartilhado
-type BancoDados struct {
-	UltimaPosicao map[string]string
-	mu            sync.Mutex //Protege o map
+type Veiculo struct {
+    ID    string
+    Tempo int // tempo de processamento em ms
 }
 
-func (db *BancoDados) SalvarPosicao(veiculoID, posicao string) {
-	db.mu.Lock()         //Trava (só uma gouroutine por vez)
-	defer db.mu.Unlock() //Destrava
-
-	//Zona crítica (só uma goroutine)
-	db.UltimaPosicao[veiculoID] = posicao
-	fmt.Printf("\nSalvo: %s -> %s\n", veiculoID, posicao)
-}
-
-func (db *BancoDados) LerPosicao(veiculoID string) string {
-	db.mu.Lock()
-	defer db.mu.Unlock()
-
-	return db.UltimaPosicao[veiculoID]
-}
-
-func EnviaDados(db *BancoDados, veiculoID string, wg *sync.WaitGroup) {
-	defer wg.Done()
-
-	count := 2
-	for i := 0; i < count; i++ {
-		posicao := fmt.Sprintf("Leitura %d: lat: -23.44  lon: -32.333", i)
-		db.SalvarPosicao(veiculoID, posicao)
-		time.Sleep(100 * time.Millisecond)
-	}
+func processarVeiculo(v Veiculo, wg *sync.WaitGroup) {
+    defer wg.Done()
+    
+    fmt.Printf("🚗 Processando %s (%dms)\n", v.ID, v.Tempo)
+    time.Sleep(time.Duration(v.Tempo) * time.Second)
+    fmt.Printf("✅ %s concluído\n", v.ID)
 }
 
 func main() {
-
-	fmt.Println("=== MUTEX: PROTEGENDO DADOS COMPARTILHADOS ===\n")
-	db:= &BancoDados{
-		UltimaPosicao: make(map[string]string),
-	}
-
-	var wg sync.WaitGroup
-
-	//10 veiculos tentando salvar no mesmo banco de dados ao mesmo tempo
-	for i := 0; i < 10; i++ {
-		wg.Add(1)
-
-		veiculoID := fmt.Sprintf("Car-%03d", i)
-		go EnviaDados(db, veiculoID, &wg)
-	}
-	wg.Wait()
-
-	fmt.Println("\nDados finais salvos\n")
-	for id, pos:= range db.UltimaPosicao{
-		fmt.Printf("\n  %s: %s \n", id, pos)
-	}
-
+    frota := []Veiculo{
+        {"CAR-001", 10},
+        {"CAR-002", 5},
+        {"CAR-003", 2},
+        {"CAR-004", 3},
+        {"CAR-005", 1},
+    }
+    
+    var wg sync.WaitGroup
+    inicio := time.Now()
+    
+    for _, v := range frota {
+        wg.Add(1)
+        go processarVeiculo(v, &wg)
+    }
+    
+    wg.Wait()
+    
+    fmt.Printf("\n🎉 Frota processada em %v\n", time.Since(inicio))
+    fmt.Println("💡 Se fosse sequencial, demoraria a soma de todos os tempos!")
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
