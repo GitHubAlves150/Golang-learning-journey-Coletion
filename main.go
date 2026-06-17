@@ -3,79 +3,56 @@ package main
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 )
 
-type DadosVeiculo struct {
-	Lat       float64
-	Lon       float64
-	VeiculoID int
-}
+func InspecionaOperacao(ctxFinal context.Context) {
 
-// O primeiro argumento AGORA é o Context!
-func SimulaVeiculo(ctx context.Context, id int, ch chan<- DadosVeiculo, wg *sync.WaitGroup) {
-	defer wg.Done()
-
-	for {
-		// 1. SEU DESAFIO: Criar o select aqui dentro.
-		// Caso 1: Se o ctx.Done() disparar, imprime que o veículo parou e dá um 'return' para encerrar.
-		// Caso 2: Se o time.After(200 * time.Millisecond) disparar, gera os dados e envia para o canal 'ch'.
-
-		/* ESCREVA O SELECT AQUI */
-		select {
-		case <-ctx.Done():
-			fmt.Println("EROR: ", ctx.Err())
-			return
-
-		case <-time.After(8 * time.Second):
-			fmt.Println("time de 200 milisegundos")
-			date := DadosVeiculo{
-				Lat: -45.44,
-				Lon: -33.22,
-				VeiculoID: id,
-			}
-			ch <-date
-			fmt.Println("Dado enviado..", id)
-		}
+	//1. Método: Value(key) -> Recupera dados do "crachá" do contexto
+	if operador, ok := ctxFinal.Value("operador_id").(string); ok {
+		fmt.Printf("\n👤 Operador responsável: %s\n", operador)
+	} else {
+		fmt.Printf("\n👤 Nenhum operador identificado no conexto.")
 	}
-}
 
-func ProcessaLeitura(ch <-chan DadosVeiculo) {
-	for leitura := range ch {
-		fmt.Printf("🚗 [Processador] Veículo %d coletado -> Lat: %.4f | Lon: %.4f\n",
-			leitura.VeiculoID, leitura.Lat, leitura.Lon)
+	//2. Método: Deadline()-> Devolve QUANDO o contexto vai expirar (no formato time.Time)
+	//O 'ok' devolve true se o contexto tiver um tempo limite definido, ou false se for eterno.
+	if horarioLimite, ok := ctxFinal.Deadline(); ok {
+		tempoRestante := time.Until(horarioLimite)
+		fmt.Printf("\n⏱️ Horário limite: %s (Resta exatamente: %v)\n", horarioLimite.Format("15:04:10"), tempoRestante)
+
+	} else {
+		fmt.Printf("\n⏱️ Este horário é externo, não tem horário limite\n")
 	}
-	fmt.Println("🏁 Processador de dados encerrado com segurança.")
+
+	fmt.Printf("\n⏳ Iniciando processamento pesado....\n")
+
+	select {
+	case <-time.After(500 * time.Millisecond):
+		fmt.Printf("\n ✅ Processamento concluído com sucesso\n")
+	case <-ctxFinal.Done():
+		//3. Método: Err() -> Só devolve algo  DEPOIS que o Done() fecha.
+		//Ele diz a razão do cancelamento: ou "context deadline exceeded" (timeout)
+		//ou "context canceled" (cancelamento manual)
+		fmt.Printf("\n❌ERROR: \n", ctxFinal.Err())
+	}
+
 }
 
 func main() {
-	var wg sync.WaitGroup
-	ch := make(chan DadosVeiculo, 10)
 
-	// 2. Criamos um contexto com TIMEOUT de 1 Segundo.
-	// Isso significa que todo o sistema vai rodar por exatamente 1s e parar sozinho!
-	ctxPai := context.Background()
-	ctx, cancel := context.WithTimeout(ctxPai, 6*time.Second)
+	ctx := context.Background()
+	operador := "operador_id"
+	driver := "Lucas_Dev_2026"
+
+	//injetamos um dado usando value
+	ctxComvalor := context.WithValue(ctx, operador, driver)
+
+	//Criamos um timeout curto de 200ms apartir do contexto que já tinha o valor
+	ctxFinal, cancel := context.WithTimeout(ctxComvalor, 200*time.Millisecond)
 	defer cancel()
 
-	fmt.Println("🚀 Inicializando a frota de veículos em background...")
-	for i := 1; i <= 3; i++ {
-		wg.Add(1)
-		// Passamos o contexto filho para cada veículo
-		go SimulaVeiculo(ctx, i, ch, &wg)
-	}
+	//Executa a inspeção
+	InspecionaOperacao(ctxFinal)
 
-	// O processador fica ouvindo o canal
-	go ProcessaLeitura(ch)
-
-	// Aguarda todos os veículos pararem (quando o timeout de 1s acontecer)
-	wg.Wait()
-
-	// Fecha o canal para liberar o range do processador
-	close(ch)
-
-	// Tempo pequeno para o print do processador aparecer antes do main morrer
-	time.Sleep(50 * time.Millisecond)
-	fmt.Println("🎉 Sistema finalizado com sucesso!")
 }

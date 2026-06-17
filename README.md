@@ -1,73 +1,176 @@
-Claro — esse exemplo não é sobre “cancelar uma goroutine” diretamente, e sim sobre **como uma goroutine fica ouvindo um sinal externo para parar**. O `context` aqui funciona como um canal de controle de vida útil da operação, algo que o pacote Go usa para cancelamento, prazos e dados de requisição. [aprendagolang.com](https://aprendagolang.com.br/o-que-e-e-como-utilizar-o-package-context/)
+# Explicação do Código Go (Markdown Formatado)
 
-## O que o código faz
+## Visão Geral
 
-- `context.Background()` cria um contexto base, vazio, sem cancelamento associado. [pkg.go](https://pkg.go.dev/context)
-- `context.WithCancel(...)` cria um contexto filho e uma função `cancel()` que dispara o cancelamento desse contexto. [aprendagolang.com](https://aprendagolang.com.br/o-que-e-e-como-utilizar-o-package-context/)
-- A goroutine entra em `select` esperando `ctx.Done()`, que é um canal fechado quando o contexto é cancelado. [pt.linux-console](https://pt.linux-console.net/?p=28755)
-- Depois de 1 segundo, `cancel()` é chamado e a goroutine recebe esse sinal e imprime a mensagem. [pkg.go](https://pkg.go.dev/context)
+Este programa demonstra o uso do pacote `context` em Go para:
+- Transportar um valor (`operador_id`) via contexto
+- Criar um contexto com **timeout**
+- Cancelar/expirar uma operação e verificar o motivo do cancelamento
 
-## Outro ângulo: pense em “alarme de saída”
+A função `InspecionaOperacao` lê o valor do contexto, consulta o deadline e executa um trabalho "pesado" simulado com `select` entre conclusão e cancelamento.
 
-Uma boa forma de entender é imaginar que o `context` é um **alarme de saída**.  
-A goroutine não para “por mágica”; ela só está programada para olhar o alarme e decidir parar quando ele tocar. [dneto](https://dneto.me/posts/contextos-em-go/)
+***
 
-Ou seja:
-
-- `ctx` = o alarme.
-- `cancel()` = apertar o botão que toca o alarme.
-- `<-ctx.Done()` = a goroutine esperando o alarme disparar.
-
-## Linha por linha
+## Imports
 
 ```go
-ctx, cancel := context.WithCancel(context.Background())
+import (
+    "context"  // Suporte a contextos (propagar cancelamento, deadlines, valores)
+    "fmt"      // Saída formatada
+    "time"     // Manipulação de tempo e durações
+)
 ```
 
-Aqui você cria um contexto cancelável. O `cancel` é importante porque libera o sinal de cancelamento e deve ser chamado explicitamente. [aprendagolang.com](https://aprendagolang.com.br/o-que-e-e-como-utilizar-o-package-context/)
+***
+
+## Função `InspecionaOperacao(ctxFinal context.Context)`
+
+### 1) Recuperar valor do contexto
 
 ```go
-go func() {
-    select {
-    case <-ctx.Done():
-        fmt.Println("✅ Goroutine recebeu sinal de cancelamento")
-    }
-}()
+if operador, ok := ctxFinal.Value("operador_id").(string); ok {
+    fmt.Printf("\n👤 Operador responsável: %s\n", operador)
+} else {
+    fmt.Printf("\n👤 Nenhum operador identificado no conexto.")
+}
 ```
 
-Essa goroutine está “escutando” o contexto. Quando `ctx.Done()` é fechado, o `select` destrava e a mensagem é exibida. [pt.linux-console](https://pt.linux-console.net/?p=28755)
+- `ctxFinal.Value("operador_id")` tenta recuperar o valor associado à chave `"operador_id"`.
+- A assertiva `.(string)` converte para `string`; `ok` indica sucesso.
+- **Observação**: usar strings literais como chave não é recomendado — os exemplos oficiais recomendam tipos não exportados para evitar colisões de chave entre pacotes.
+
+***
+
+### 2) Deadline()
 
 ```go
-time.Sleep(1 * time.Second)
-cancel()
+if horarioLimite, ok := ctxFinal.Deadline(); ok {
+    tempoRestante := time.Until(horarioLimite)
+    fmt.Printf("\n⏱️ Horário limite: %s (Resta exatamente: %v)\n", horarioLimite.Format("15:04:10"), tempoRestante)
+} else {
+    fmt.Printf("\n⏱️ Este horário é externo, não tem horário limite\n")
+}
 ```
 
-Depois de esperar 1 segundo, o código cancela o contexto. Isso não mata a goroutine na força; apenas sinaliza que ela deve encerrar o trabalho. [dneto](https://dneto.me/posts/contextos-em-go/)
+- `horarioLimite, ok := ctxFinal.Deadline()` retorna o tempo limite (`time.Time`) e um `bool ok` que indica se existe deadline.
+- Se `ok` for true, calcula `tempoRestante := time.Until(horarioLimite)` e imprime horário e tempo restante.
+- Caso contrário, indica que não há horário limite.
+
+***
+
+### 3) Simulação de processamento pesado e tratamento de cancelamento
 
 ```go
-time.Sleep(100 * time.Millisecond)
+fmt.Printf("\n⏳ Iniciando processamento pesado....\n")
+
+select {
+case <-time.After(500 * time.Millisecond):
+    fmt.Printf("\n ✅ Processamento concluído com sucesso\n")
+case <-ctxFinal.Done():
+    fmt.Printf("\n❌ERROR: \n", ctxFinal.Err())
+}
 ```
 
-Esse pequeno atraso dá tempo para a goroutine imprimir antes do programa principal terminar.
+- Imprime mensagem de início.
+- `select` com dois cases:
+  - **Case 1**: `<-time.After(500 * time.Millisecond)` aguarda **500 ms** e considera processamento concluído com sucesso.
+  - **Case 2**: `<-ctxFinal.Done()` espera o canal `Done()` do contexto ser fechado (cancelamento ou timeout).
+    - No branch de cancelamento, o código tenta imprimir o erro, mas **há um erro de formatação**:
+      ```go
+      // ❌ INCORERTO (não exibe ctxFinal.Err())
+      fmt.Printf("\n❌ERROR: \n", ctxFinal.Err())
+      
+      // ✅ CORRETO
+      fmt.Printf("\n❌ERROR: %v\n", ctxFinal.Err())
+      ```
+    - `ctxFinal.Err()` retorna:
+      - `"context deadline exceeded"` → timeout
+      - `"context canceled"` → cancelamento manual
 
-## O ponto mais importante
+***
 
-O `context` **não é um mecanismo de controle direto de goroutines**; ele é um **sinal padronizado** para dizer “pare o que estiver fazendo”. [pt.linux-console](https://pt.linux-console.net/?p=28755)
-Por isso ele aparece muito em servidores, APIs, consultas a banco e tarefas assíncronas que precisam respeitar timeout ou cancelamento. [pkg.go](https://pkg.go.dev/context)
+## Função `main()`
 
-## Uma versão mental mais clara
+```go
+func main() {
+    ctx := context.Background()
+    operador := "operador_id"
+    driver := "Lucas_Dev_2026"
 
-Pense assim:
+    // Injetamos um dado usando value
+    ctxComvalor := context.WithValue(ctx, operador, driver)
 
-1. O programa cria uma tarefa.
-2. A tarefa fica trabalhando ou esperando.
-3. Se alguém chamar `cancel()`, o contexto avisa.
-4. A tarefa, ao perceber isso, encerra sua execução.
+    // Criamos um timeout curto de 200ms apartir do contexto que já tinha o valor
+    ctxFinal, cancel := context.WithTimeout(ctxComvalor, 200*time.Millisecond)
+    defer cancel()
 
-Esse é o padrão que você vai ver muito em Go: **passar o contexto para funções e obedecer ao sinal dele**. [aprendagolang.com](https://aprendagolang.com.br/o-que-e-e-como-utilizar-o-package-context/)
+    // Executa a inspeção
+    InspecionaOperacao(ctxFinal)
+}
+```
 
-## Detalhe útil para estudo
+### Fluxo passo a passo:
 
-Se você quiser deixar o exemplo mais realista, normalmente a goroutine teria mais de um `case` no `select`, por exemplo para continuar trabalhando ou sair ao cancelar. Isso ajuda a entender que `context` faz mais sentido quando há alguma operação em andamento e não apenas uma espera vazia. [dneto](https://dneto.me/posts/contextos-em-go/)
+1. `ctx := context.Background()` → cria contexto base.
+2. `ctxComvalor := context.WithValue(ctx, operador, driver)` → injeta o par chave-valor no contexto.
+3. `ctxFinal, cancel := context.WithTimeout(ctxComvalor, 200*time.Millisecond)` → cria contexto filho com **timeout de 200 ms**.
+4. `defer cancel()` → garante que o contexto será cancelado ao final da função.
+5. `InspecionaOperacao(ctxFinal)` → executa a inspeção.
 
-Se quiser, eu posso reescrever esse mesmo exemplo com uma explicação bem visual, estilo “passo a passo da execução”, ou transformar em um exemplo com `WithTimeout`.
+***
+
+## Comportamento Esperado na Execução
+
+| Componente | Valor |
+|------------|-------|
+| Operador injetado | `Lucas_Dev_2026` |
+| Timeout do contexto | `200 ms` |
+| Tempo do processamento | `500 ms` |
+
+### Resultado:
+
+```
+👤 Operador responsável: Lucas_Dev_2026
+
+⏱️ Horário limite: 17:31:45 (Resta exatamente: 199.xxx ms)
+
+⏳ Iniciando processamento pesado....
+
+❌ERROR: context deadline exceeded
+```
+
+**Por que?**
+- O timeout é **200 ms**, mas o processamento leva **500 ms**.
+- O contexto expira antes do processamento terminar → `ctxFinal.Done()` é fechado primeiro.
+- `ctxFinal.Err()` retorna `"context deadline exceeded"`.
+
+***
+
+## Correções Recomendadas
+
+| Linha | Problema | Correção |
+|-------|----------|----------|
+| `fmt.Printf("\n❌ERROR: \n", ctxFinal.Err())` | Especificador de formato faltante | `fmt.Printf("\n❌ERROR: %v\n", ctxFinal.Err())` |
+| `context.WithValue(ctx, operador, driver)` | Chave é string (pode colidir) | Use tipo não exportado: `type ctxKey string; const operadorKey ctxKey = "operador_id"` |
+
+***
+
+## Métodos do Contexto Utilizados
+
+| Método | Descrição | Retorna |
+|--------|-----------|---------|
+| `Value(key)` | Recupera dados do "crachá" do contexto | `(valor, ok)` |
+| `Deadline()` | Devolve quando o contexto vai expirar | `(time.Time, ok)` |
+| `Done()` | Canal fechado quando contexto é cancelado | `chan struct{}` |
+| `Err()` | Só devolve algo **depois** que `Done()` fecha | `error` |
+
+***
+
+## Conclusão
+
+Este código é um **exemplo educacional** de como usar `context` para:
+- Passar dados entre funções
+- Controlar tempo de execução com timeout
+- Cancelar operações e tratar erros corretamente
+
+A correção principal é adicionar `%v` no `fmt.Printf` para exibir o erro do contexto.
