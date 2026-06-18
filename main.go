@@ -2,57 +2,91 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 )
 
-func InspecionaOperacao(ctxFinal context.Context) {
+//w!j9Q%yqdfZL:n?  Stefanni Melo
 
-	//1. Método: Value(key) -> Recupera dados do "crachá" do contexto
-	if operador, ok := ctxFinal.Value("operador_id").(string); ok {
-		fmt.Printf("\n👤 Operador responsável: %s\n", operador)
-	} else {
-		fmt.Printf("\n👤 Nenhum operador identificado no conexto.")
+// Funcao que processa o pagamento no gateway (Pargar.me)
+func ProcessarPagamento(ctx context.Context, valorCompra float64) {
+	fmt.Printf("\n💳 [GATEWAY] Iniciando validação do cartão..\n")
+
+	//1. Método Value() - Recupera o ID do cliente que veio no "crachá" do contexto
+	if clienteID, ok := ctx.Value("usuario_id").(int); ok {
+		fmt.Printf("\n👤 [GATEWAY] Identificando CPF/Dados do cliente ID: %d..\n", clienteID)
+	}
+	//2. Método Deadline() -  verificamos quanto tempo temos antes da nossa API estourar
+	if limite, ok := ctx.Deadline(); ok {
+		tempoRestante := time.Until(limite)
+		fmt.Printf("\n⏱️[GATEWAY] Janela de tempo segura; a requisição expira em %v\n", tempoRestante)
+
+		//Decisão inteligente baseada no deadline
+		if tempoRestante < 50*time.Millisecond {
+			fmt.Println("⚠️ [Gateway] Tempo restante insuficiente para transação bancária segura. Abortando antes de cobrar!")
+			return
+		}
 	}
 
-	//2. Método: Deadline()-> Devolve QUANDO o contexto vai expirar (no formato time.Time)
-	//O 'ok' devolve true se o contexto tiver um tempo limite definido, ou false se for eterno.
-	if horarioLimite, ok := ctxFinal.Deadline(); ok {
-		tempoRestante := time.Until(horarioLimite)
-		fmt.Printf("\n⏱️ Horário limite: %s (Resta exatamente: %v)\n", horarioLimite.Format("15:04:10"), tempoRestante)
+	//Simula a chamada de rede para o banco (demora 300ms)
+	chBanco := make(chan string, 1)
+	go func() {
+		time.Sleep(300 * time.Millisecond)
+		chBanco <- "PAGAMENTO_APROVADO_TOKEN_9988"
+	}()
 
-	} else {
-		fmt.Printf("\n⏱️ Este horário é externo, não tem horário limite\n")
-	}
-
-	fmt.Printf("\n⏳ Iniciando processamento pesado....\n")
-
+	//O select monitora o watchdog
 	select {
-	case <-time.After(500 * time.Millisecond):
-		fmt.Printf("\n ✅ Processamento concluído com sucesso\n")
-	case <-ctxFinal.Done():
-		//3. Método: Err() -> Só devolve algo  DEPOIS que o Done() fecha.
-		//Ele diz a razão do cancelamento: ou "context deadline exceeded" (timeout)
-		//ou "context canceled" (cancelamento manual)
-		fmt.Printf("\n❌ERROR: \n", ctxFinal.Err())
+	case resposta := <- chBanco:
+		fmt.Printf("✅ [Gateway] Sucesso! Cartão cobrado no valor de R$ %.2f. Código: %s\n", valorCompra, resposta)
+	case <-ctx.Done():
+		//3. Método Err() - O Done() disparou. Vamos dar o veredito do motivo usando Err()
+	motivo:=ctx.Err()
+		fmt.Printf("\n🚨 [Gateway] OPERAÇÃO ABORTADA PELO SISTEMA!\n")
+
+		if errors.Is(motivo, context.DeadlineExceeded) {
+			fmt.Println("❌ Motivo: O servidor do banco demorou mais que o limite permitido(Timeout)")
+		} else if errors.Is(motivo, context.Canceled) {
+			fmt.Println("❌ Motivo: O cliente cancelou a operação ou fechou a aba do navegador.")
+		}
+
+		fmt.Println("🛡️ [Gateway] Estorno de segurança garantido. Nenhuma cobrança foi feita.")
+
 	}
 
 }
-
 func main() {
 
-	ctx := context.Background()
-	operador := "operador_id"
-	driver := "Lucas_Dev_2026"
+	//Criamos o contexto base da requisição HTTP
+	ctxPAI := context.Background()
 
-	//injetamos um dado usando value
-	ctxComvalor := context.WithValue(ctx, operador, driver)
+	//2. injetamos o ID do cliente logado na sessão (withValue)
+	ctxUsuario := context.WithValue(ctxPAI, "usuario_id", 4042)
 
-	//Criamos um timeout curto de 200ms apartir do contexto que já tinha o valor
-	ctxFinal, cancel := context.WithTimeout(ctxComvalor, 200*time.Millisecond)
-	defer cancel()
+	//CASO 1: o gateway responde a tempo (Timeout de 500ms, banco demora 300ms) obs! Sempre liberar os recursos
+	fmt.Println("---SIMULAÇÃO 1: FLUXO PERFEITO---")
+	ctxSucesso, cancel1 := context.WithTimeout(ctxUsuario, 500*time.Millisecond)
+	ProcessarPagamento(ctxSucesso, 150.90)
+	cancel1() //Sempre liberar recursos
 
-	//Executa a inspeção
-	InspecionaOperacao(ctxFinal)
+	//CASO 2: O banco fica lente e estoura o limite (Timeout de 100ms, banco demora 300ms)
+	fmt.Println("---SIMULAÇÃO 2: BANCO LENTO----")
+	ctxTimeout, cancel2 := context.WithTimeout(ctxUsuario, 100*time.Millisecond)
+	ProcessarPagamento(ctxTimeout, 89.90)
+	cancel2()
+
+	//CASO 3: O cliente desiste  e clica em "Cancelar" manualmente
+	fmt.Println("--SIMULAÇÃO 3: CLIENTE DESISITE (CANCELAMENTO MANUAL) ---")
+	ctxCancelamento, cancelManual := context.WithCancel(ctxUsuario)
+
+	//Simula o cliente clicando em fechar a página após 50 milisegundos
+	go func() {
+		time.Sleep(50 * time.Millisecond)
+		fmt.Println("💻 [Navegador] Usuário fechou a aba do e-comerce!")
+		cancelManual()
+	}()
+
+	ProcessarPagamento(ctxCancelamento, 450.00)
 
 }

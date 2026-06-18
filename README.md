@@ -1,176 +1,209 @@
-# Explicação do Código Go (Markdown Formatado)
+```markdown
+# Processamento de Pagamento com Contexto em Go
+
+Este documento explica um programa Go que simula o processamento de pagamento em um gateway (Pargar.me), utilizando o pacote `context` para controlar tempo de execução, cancelamentos e transporte de dados.
+
+---
 
 ## Visão Geral
 
-Este programa demonstra o uso do pacote `context` em Go para:
-- Transportar um valor (`operador_id`) via contexto
-- Criar um contexto com **timeout**
-- Cancelar/expirar uma operação e verificar o motivo do cancelamento
+O programa demonstra:
 
-A função `InspecionaOperacao` lê o valor do contexto, consulta o deadline e executa um trabalho "pesado" simulado com `select` entre conclusão e cancelamento.
+- **Transporte de dados** via `Value()` (ID do cliente)
+- **Controle de tempo** com `Deadline()` e `WithTimeout()`
+- **Cancelamento manual** com `WithCancel()` e `Done()`
+- **Identificação do motivo** do cancelamento com `Err()` e `errors.Is()`
 
-***
+É um exemplo educacional de como proteger APIs de **timeouts** e **cancelamentos de usuário** em operações de rede (como chamadas bancárias).
+
+---
 
 ## Imports
 
 ```go
 import (
-    "context"  // Suporte a contextos (propagar cancelamento, deadlines, valores)
-    "fmt"      // Saída formatada
-    "time"     // Manipulação de tempo e durações
+    "context"   // Contextos para cancelamento, deadlines e valores
+    "errors"    // Para comparar erros com errors.Is()
+    "fmt"       // Saída formatada
+    "time"      // Durações e tempos
 )
 ```
 
-***
+---
 
-## Função `InspecionaOperacao(ctxFinal context.Context)`
+## Função `ProcessarPagamento(ctx context.Context, valorCompra float64)`
 
-### 1) Recuperar valor do contexto
+### 1. Recuperar ID do cliente com `Value()`
 
 ```go
-if operador, ok := ctxFinal.Value("operador_id").(string); ok {
-    fmt.Printf("\n👤 Operador responsável: %s\n", operador)
-} else {
-    fmt.Printf("\n👤 Nenhum operador identificado no conexto.")
+if clienteID, ok := ctx.Value("usuario_id").(int); ok {
+    fmt.Printf("\n👤 [GATEWAY] Identificando CPF/Dados do cliente ID: %d..\n", clienteID)
 }
 ```
 
-- `ctxFinal.Value("operador_id")` tenta recuperar o valor associado à chave `"operador_id"`.
-- A assertiva `.(string)` converte para `string`; `ok` indica sucesso.
-- **Observação**: usar strings literais como chave não é recomendado — os exemplos oficiais recomendam tipos não exportados para evitar colisões de chave entre pacotes.
+- `ctx.Value("usuario_id")` recupera o valor associado à chave.
+- `. (int)` converte para `int`; `ok` indica sucesso.
 
-***
+---
 
-### 2) Deadline()
+### 2. Verificar deadline com `Deadline()`
 
 ```go
-if horarioLimite, ok := ctxFinal.Deadline(); ok {
-    tempoRestante := time.Until(horarioLimite)
-    fmt.Printf("\n⏱️ Horário limite: %s (Resta exatamente: %v)\n", horarioLimite.Format("15:04:10"), tempoRestante)
-} else {
-    fmt.Printf("\n⏱️ Este horário é externo, não tem horário limite\n")
+if limite, ok := ctx.Deadline(); ok {
+    tempoRestante := time.Until(limite)
+    fmt.Printf("\n⏱️ [GATEWAY] Janela de tempo segura; a requisição expira em %v\n", tempoRestante)
+
+    if tempoRestante < 50*time.Millisecond {
+        fmt.Println("⚠️ [Gateway] Tempo insuficiente. Abortando antes de cobrar!")
+        return
+    }
 }
 ```
 
-- `horarioLimite, ok := ctxFinal.Deadline()` retorna o tempo limite (`time.Time`) e um `bool ok` que indica se existe deadline.
-- Se `ok` for true, calcula `tempoRestante := time.Until(horarioLimite)` e imprime horário e tempo restante.
-- Caso contrário, indica que não há horário limite.
+- Se tempo restante < **50 ms**, aborta antes de chamar o banco.
 
-***
+---
 
-### 3) Simulação de processamento pesado e tratamento de cancelamento
+### 3. Simular chamada ao banco (goroutine + canal)
 
 ```go
-fmt.Printf("\n⏳ Iniciando processamento pesado....\n")
+chBanco := make(chan string, 1)
+go func() {
+    time.Sleep(300 * time.Millisecond)
+    chBanco <- "PAGAMENTO_APROVADO_TOKEN_9988"
+}()
+```
 
+- Goroutine simula chamada de rede: **300 ms** de delay + token de aprovação.
+
+---
+
+### 4. Monitorar com `select` (banco vs contexto cancelado)
+
+```go
 select {
-case <-time.After(500 * time.Millisecond):
-    fmt.Printf("\n ✅ Processamento concluído com sucesso\n")
-case <-ctxFinal.Done():
-    fmt.Printf("\n❌ERROR: \n", ctxFinal.Err())
+case resposta := <-chBanco:
+    fmt.Printf("✅ [Gateway] Sucesso! Cartão cobrado: R$ %.2f. Código: %s\n", valorCompra, resposta)
+
+case <-ctx.Done():
+    motivo := ctx.Err()
+    fmt.Printf("\n🚨 [Gateway] OPERAÇÃO ABORTADA PELO SISTEMA!\n")
+
+    if errors.Is(motivo, context.DeadlineExceeded) {
+        fmt.Println("❌ Motivo: Timeout — servidor do banco demorou demais")
+    } else if errors.Is(motivo, context.Canceled) {
+        fmt.Println("❌ Motivo: Cliente cancelou ou fechou a aba")
+    }
+
+    fmt.Println("🛡️ [Gateway] Estorno garantido. Nenhuma cobrança foi feita.")
 }
 ```
 
-- Imprime mensagem de início.
-- `select` com dois cases:
-  - **Case 1**: `<-time.After(500 * time.Millisecond)` aguarda **500 ms** e considera processamento concluído com sucesso.
-  - **Case 2**: `<-ctxFinal.Done()` espera o canal `Done()` do contexto ser fechado (cancelamento ou timeout).
-    - No branch de cancelamento, o código tenta imprimir o erro, mas **há um erro de formatação**:
-      ```go
-      // ❌ INCORERTO (não exibe ctxFinal.Err())
-      fmt.Printf("\n❌ERROR: \n", ctxFinal.Err())
-      
-      // ✅ CORRETO
-      fmt.Printf("\n❌ERROR: %v\n", ctxFinal.Err())
-      ```
-    - `ctxFinal.Err()` retorna:
-      - `"context deadline exceeded"` → timeout
-      - `"context canceled"` → cancelamento manual
+- `select` monitora:
+  - **Case 1**: resposta do banco (sucesso)
+  - **Case 2**: contexto cancelado/expirado
+- `ctx.Err()` retorna:
+  - `context.DeadlineExceeded` → timeout
+  - `context.Canceled` → cancelamento manual
 
-***
+---
 
 ## Função `main()`
 
+### Contexto base
+
 ```go
-func main() {
-    ctx := context.Background()
-    operador := "operador_id"
-    driver := "Lucas_Dev_2026"
-
-    // Injetamos um dado usando value
-    ctxComvalor := context.WithValue(ctx, operador, driver)
-
-    // Criamos um timeout curto de 200ms apartir do contexto que já tinha o valor
-    ctxFinal, cancel := context.WithTimeout(ctxComvalor, 200*time.Millisecond)
-    defer cancel()
-
-    // Executa a inspeção
-    InspecionaOperacao(ctxFinal)
-}
+ctxPAI := context.Background()
+ctxUsuario := context.WithValue(ctxPAI, "usuario_id", 4042)
 ```
 
-### Fluxo passo a passo:
+---
 
-1. `ctx := context.Background()` → cria contexto base.
-2. `ctxComvalor := context.WithValue(ctx, operador, driver)` → injeta o par chave-valor no contexto.
-3. `ctxFinal, cancel := context.WithTimeout(ctxComvalor, 200*time.Millisecond)` → cria contexto filho com **timeout de 200 ms**.
-4. `defer cancel()` → garante que o contexto será cancelado ao final da função.
-5. `InspecionaOperacao(ctxFinal)` → executa a inspeção.
+### CASO 1: Fluxo perfeito (timeout 500 ms, banco 300 ms)
 
-***
-
-## Comportamento Esperado na Execução
-
-| Componente | Valor |
-|------------|-------|
-| Operador injetado | `Lucas_Dev_2026` |
-| Timeout do contexto | `200 ms` |
-| Tempo do processamento | `500 ms` |
-
-### Resultado:
-
-```
-👤 Operador responsável: Lucas_Dev_2026
-
-⏱️ Horário limite: 17:31:45 (Resta exatamente: 199.xxx ms)
-
-⏳ Iniciando processamento pesado....
-
-❌ERROR: context deadline exceeded
+```go
+fmt.Println("--- SIMULAÇÃO 1: FLUXO PERFEITO ---")
+ctxSucesso, cancel1 := context.WithTimeout(ctxUsuario, 500*time.Millisecond)
+ProcessarPagamento(ctxSucesso, 150.90)
+cancel1()
 ```
 
-**Por que?**
-- O timeout é **200 ms**, mas o processamento leva **500 ms**.
-- O contexto expira antes do processamento terminar → `ctxFinal.Done()` é fechado primeiro.
-- `ctxFinal.Err()` retorna `"context deadline exceeded"`.
+- **Resultado**: pagamento aprovado (500 ms > 300 ms).
 
-***
+---
 
-## Correções Recomendadas
+### CASO 2: Banco lento (timeout 100 ms, banco 300 ms)
 
-| Linha | Problema | Correção |
-|-------|----------|----------|
-| `fmt.Printf("\n❌ERROR: \n", ctxFinal.Err())` | Especificador de formato faltante | `fmt.Printf("\n❌ERROR: %v\n", ctxFinal.Err())` |
-| `context.WithValue(ctx, operador, driver)` | Chave é string (pode colidir) | Use tipo não exportado: `type ctxKey string; const operadorKey ctxKey = "operador_id"` |
+```go
+fmt.Println("--- SIMULAÇÃO 2: BANCO LENTO ---")
+ctxTimeout, cancel2 := context.WithTimeout(ctxUsuario, 100*time.Millisecond)
+ProcessarPagamento(ctxTimeout, 89.90)
+cancel2()
+```
 
-***
+- **Resultado**: timeout expirado (`context.DeadlineExceeded`).
+
+---
+
+### CASO 3: Cliente cancela manualmente
+
+```go
+fmt.Println("--- SIMULAÇÃO 3: CANCELAMENTO MANUAL ---")
+ctxCancelamento, cancelManual := context.WithCancel(ctxUsuario)
+
+go func() {
+    time.Sleep(50 * time.Millisecond)
+    fmt.Println("💻 [Navegador] Usuário fechou a aba do e-commerce!")
+    cancelManual()
+}()
+
+ProcessarPagamento(ctxCancelamento, 450.00)
+```
+
+- **Resultado**: cancelamento manual (`context.Canceled`).
+
+---
 
 ## Métodos do Contexto Utilizados
 
-| Método | Descrição | Retorna |
-|--------|-----------|---------|
-| `Value(key)` | Recupera dados do "crachá" do contexto | `(valor, ok)` |
-| `Deadline()` | Devolve quando o contexto vai expirar | `(time.Time, ok)` |
-| `Done()` | Canal fechado quando contexto é cancelado | `chan struct{}` |
-| `Err()` | Só devolve algo **depois** que `Done()` fecha | `error` |
+| Método     | Descrição                                | Retorna            |
+|------------|------------------------------------------|--------------------|
+| `Value()`  | Recupera dado do contexto                | `(valor, ok)`      |
+| `Deadline()` | Tempo limite do contexto               | `(time.Time, ok)`  |
+| `Done()`   | Canal fechado quando contexto cancela    | `chan struct{} `   |
+| `Err()`    | Motivo do cancelamento (após `Done()`)   | `error`            |
 
-***
+---
+
+## Boas Práticas Demonstradas
+
+| Prática                              | Por que é importante                          |
+|--------------------------------------|------------------------------------------------|
+| `cancel()` após uso                  | Libera recursos do contexto (evita leaks)     |
+| Check de tempo antes de chamar banco | Evita cobrar sem confirmar transação          |
+| `select` com `ctx.Done()`            | Cancela operações se usuário desistir         |
+| `errors.Is(err, context.DeadlineExceeded)` | Diferencia timeout de cancelamento manual |
+
+---
+
+## Correções Recomendadas
+
+| Problema                                               | Correção                                      |
+|--------------------------------------------------------|-----------------------------------------------|
+| `fmt.Printf("... ID: %s", clienteID)` com `int`        | `fmt.Printf("... ID: %d", clienteID)`         |
+| `motivo:=ctx.Err()` (ausência de espaço)               | `motivo := ctx.Err()`                         |
+| Nenhum `cancel()` no CASO 3                            | Adicionar `defer cancelManual()` ou `cancel()`|
+
+---
 
 ## Conclusão
 
-Este código é um **exemplo educacional** de como usar `context` para:
-- Passar dados entre funções
-- Controlar tempo de execução com timeout
-- Cancelar operações e tratar erros corretamente
+Este código é um **exemplo completo** de como usar `context` em operações de rede sensíveis ao tempo:
 
-A correção principal é adicionar `%v` no `fmt.Printf` para exibir o erro do contexto.
+- Protege contra **timeouts** longos
+- Cancela operações quando usuário **desiste**
+- Informa o **motivo** do cancelamento
+- Garante **segurança**: "nenhuma cobrança foi feita" se operação abortada
+
+Padrão essencial para APIs de e-commerce, gateways de pagamento e serviços que chamam bancos/serviços externos.
+```
