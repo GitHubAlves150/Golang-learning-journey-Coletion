@@ -1,4 +1,4 @@
-![Imagem Gerada pelo Gemini](Gemini_Generated_Image_xcwu5dxcwu5dxcwu.png)
+![Imagem Gerada pelo Gemini](Gemini_Generated_Image_likc0ylikc0ylikc.png)
 
 # 🚀 Roteamento Essencial: Entendendo o Método PUT
 
@@ -17,12 +17,20 @@ go get -u gorm.io/driver/postgres
 
 ---
 
-## 🎯 Branch Atual: `Topic/API_CRUD_PUT_II`
+## 🎯 Branch Atual: `Topic/API_CRUD_DELETE_I`
 
+## 🗑️ As Duas Formas de Deletar Dados 
 
-&nbsp;&nbsp;&nbsp;&nbsp;Com esse método PUT robusto, você deu um salto gigante na maturidade como desenvolvedor. Você saiu do básico de "fazer funcionar" e entrou no nível de garantir a integridade dos dados e a estabilidade da aplicação em produção.
+1. Hard Delete (Exclusão Física).
 
+&nbsp;&nbsp;&nbsp;&nbsp;É o DELETE clássico do SQL (DELETE FROM usuarios WHERE id = ...). O registro é completamente apagado do disco do banco de dados.
 
+- Pró: Limpa espaço em disco instantaneamente.
+- Contra: Se foi apagado por engano (ou por um ataque), já era. Não dá para recuperar sem um backup.
+
+2. Soft Delete (Exclusão Lógica)
+
+&nbsp;&nbsp;&nbsp;&nbsp;O registro não é apagado do banco de dados. Em vez disso, adicionamos uma coluna chamada deletado_em (ou deleted_at) na tabela. Quando o usuário pede para deletar, o Go apenas grava a data/hora atual nessa coluna. Nas consultas (GET), nós filtramos para trazer apenas onde deletado_em IS NULL.
 
 #🏗️ A Estrutura de Pastas Completa
 
@@ -40,84 +48,43 @@ meu-projeto-chi/
 │       └── user_hand.go  # Validação do HTTP, extração do ID e chamada do repositório
 ```
 
+# Go CRUD Completo com Chi, GORM e Clean Architecture
 
-# Go CRUD com Chi e GORM
-
-Este projeto é um laboratório prático para o desenvolvimento de uma API REST robusta utilizando Go (Golang), o roteador leve `go-chi` e o ORM `GORM` conectado a um banco de dados PostgreSQL.
+Este projeto é uma API REST robusta e performática desenvolvida em Go (Golang), utilizando o roteador leve `go-chi/v5` e o ORM `GORM` integrado a um banco de dados PostgreSQL. O objetivo principal deste repositório é demonstrar a transição de um código centralizado para uma arquitetura profissional desacoplada, aplicando os princípios do SOLID.
 
 ## 🏗️ Arquitetura e Princípios Aplicados
 
-O projeto foi estruturado seguindo os princípios da **Clean Architecture** e do **SOLID**, garantindo baixo acoplamento e alta testabilidade:
+A estrutura do projeto foi dividida em camadas lógicas bem definidas, seguindo os padrões de **Clean Architecture**:
 
-- **`internal/entity`**: Contém as regras de negócio puras (Structs) e validações autônomas de dados.
-- **`internal/repository`**: Camada de persistência que dita os contratos de banco através de interfaces, isolando o ORM da lógica de transporte (Inversão de Dependência).
-- **`internal/handler`**: Camada de entrega HTTP, responsável apenas por gerenciar requisições, respostas e parâmetros de rotas.
+- **`internal/entity`**: Contém as regras de negócio e validações autônomas de dados (Princípio da Responsabilidade Única).
+- **`internal/repository`**: Camada de persistência que dita os contratos de banco através de interfaces, isolando o ORM (Inversão de Dependência).
+- **`internal/handler`**: Camada de entrega HTTP, responsável estritamente por gerenciar requisições, respostas, status codes e parâmetros de rotas.
 
 ---
 
 ## 🛠️ Tecnologias Utilizadas
 
 - **Go** (Golang)
-- **Go-Chi/v5** (Roteador HTTP)
+- **Go-Chi/v5** (Roteador HTTP idiomático)
 - **GORM** (ORM para persistência)
-- **PostgreSQL** (Banco de dados relacional com suporte a UUID)
+- **PostgreSQL** (Banco de dados relacional com suporte nativo a UUID)
 
 ---
 
-## 🚀 Endpoints Disponíveis
 
-### Atualizar Usuário (`PUT`)
-
-Substitui os dados de um usuário existente com validação estrita de campos obrigatórios.
-
+### Deletar Usuário (`DELETE`)
+Executa a remoção física (*Hard Delete*) de um registro baseado em seu UUID.
 - **URL:** `/usuarios/{id}`
-- **Método:** `PUT`
-- **Headers:** `Content-Type: application/json`
+- **Método:** `DELETE`
 - **URL Params:** `id=[UUID Válido]`
+- **Respostas:**
+  - `204 No Content`: Usuário deletado com sucesso (sem corpo de resposta).
+  - `400 Bad Request`: Se o formato do UUID enviado na URL for inválido.
+  - `404 Not Found`: Se o usuário não for encontrado no banco de dados.
 
-#### Corpo da Requisição (Request Body):
-```json
-{
-  "nome": "Lucas Alves Atualizado",
-  "email": "lucas.novo@gmail.com",
-  "sexo": "Masc"
-}
-``` 
-___   
-
-🧠 O que aprendemos com este método PUT?   
-
-## 1. Defesa em Camadas (Fail-Fast)   
-
-&nbsp;&nbsp;&nbsp;&nbsp; Aprendemos que uma API Plena não confia no que o cliente envia. Ao colocar o método Validar() na nossa entidade, aplicamos o conceito de Fail-Fast (Falhe Rápido). Se o JSON vier incompleto, a requisição é rejeitada no Handler imediatamente, poupando processamento e conexões com o banco de dados.
-
-## 2. Idempotência e Substituição Semântica
-
-&nbsp;&nbsp;&nbsp;&nbsp; O PUT serve para substituir um recurso. Aprendemos que, se o cliente não enviar um dos campos exigidos, a aplicação deve retornar um erro (400 Bad Request) em vez de simplesmente aceitar o valor em branco e apagar/zerar a coluna no banco de dados por acidente.
-## 3. Preservação de Estado Imutável
-
-&nbsp;&nbsp;&nbsp;&nbsp;Ao buscar o usuário no banco antes (FindByID), atualizar apenas os campos mutáveis (Nome, Email, Sexo) e depois salvar, aprendemos como preservar informações que o cliente não deve alterar via PUT, como o ID (UUID) e a data de criação original (criado_em).
-## 4. Lógica Booleana Reversa para Validações
-
-&nbsp;&nbsp;&nbsp;&nbsp;Consolidamos que, ao validar cenários de erro com negações (!=), precisamos usar o operador && (E) para que a condição só seja verdadeira se o dado enviado falhar em todas as opções aceitáveis ao mesmo tempo.
-
-### Como testar
-- Clone o repositório e instale as dependências    
-  ```bash 
-  go mod tidy 
-  ```    
-  - certifique-se de que o banco de dados existe, caso contrário executa o arquivo .yml com docker compose up -d
- - No terminal rode o servidor localhost
-  ```bash 
-    go run cmd/api/main.go 
- ``` 
- - Entre no docker exec -it xxxx bash, entre no banco de dados e pegue um id qualquer para testar  
- - Rode este comando no terminal substituindo o id após /usuarios/coloe-aqui-o-id. Dê um enter e verifica a resposta http no terminal que está rodando o servidor.
- - Verifica a tabela do banco com SELECT * FROM usuarios. Repare que o dados atualizado foi para o final da tabela, mas o id e data-hora continuam o mesmo.
-
-## Resposta
-
-- 200 OK: Usuário atualizado com sucesso retornando o JSON atualizado
-- 400 badRequest: Se o UUID for inválido ou se algum campo obrigatório falhar na validação(ex: e-mail em branco, sexo inválido).
-- 404 Not Found:Se o UUID não correspondera nenhum usuário no banco de dados.
-
+## Como testar.
+&nbsp;&nbsp;&nbsp;&nbsp;Clone o repositṕorio e certifique-se de que o banco de dados existe. Rode o servidor //localhost.
+entre no banco de dados e escolhe um id qualquer para testar o "delete" e em um terminal rode o comando 
+```bash 
+curl -X DELETE http://localhost:8080/usuarios/COLE-O-UUID-AQUI
+```
