@@ -17,7 +17,7 @@ go get -u gorm.io/driver/postgres
 
 ---
 
-## 🎯 Branch Atual: `Topic/API_CRUD_DELETE_I`
+## 🎯 Branch Atual: `Topic/API_CRUD_DELETE_II`
 
 ## 🗑️ As Duas Formas de Deletar Dados 
 
@@ -35,17 +35,17 @@ go get -u gorm.io/driver/postgres
 #🏗️ A Estrutura de Pastas Completa
 
 ```bash
-meu-projeto-chi/
+projeto-delete-only/
 ├── cmd/
 │   └── api/
-│       └── main.go       # Conecta ao Postgres e injeta as dependências
+│       └── main.go       # Conecta ao banco e liga as camadas
 ├── internal/
 │   ├── entity/
-│   │   └── user.go       # Struct e validações de regras de negócio
+│   │   └── user.go       # A estrutura do dado (O que será deletado)
 │   ├── repository/
-│   │   └── user_db.go    # Interface e execução do UPDATE no GORM
+│   │   └── user_db.go    # O contrato e a query física de exclusão
 │   └── handler/
-│       └── user_hand.go  # Validação do HTTP, extração do ID e chamada do repositório
+│       └── user_hand.go  # A recepção HTTP (Chi, parâmetros e Status 204)
 ```
 
 # Go CRUD Completo com Chi, GORM e Clean Architecture

@@ -1,36 +1,23 @@
 /*
-A melhor prática do SOLID (S - Responsabilidade Única) dita que a própria entidade deve saber se ela é válida ou não. Então, colocamos um método Validar() diretamente na nossa Struct.
+A entidade apenas diz ao Go e ao GORM qual é a estrutura e o nome da tabela do dado que o sistema vai manipular.
 */
+
 
 package entity
 
 import (
-	"errors"
 	"time"
+	"github.com/google/uuid"
 )
 
 type Usuario struct {
-	ID       string    `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
-	Nome     string    `gorm:"type:varchar(50)" json:"nome"`
-	Email    string    `gorm:"type:varchar(40)" json:"email"`
-	Sexo     string    `gorm:"type:varchar(10)" json:"sexo"`
-	CriadoEm time.Time `gorm:"column:criado_em;default:CURRENT_TIMESTAMP" json:"criado_em"`
+	ID       uuid.UUID `gorm:"type:uuid;primaryKey" json:"id"`
+	Nome     string    `json:"nome"`
+	Email    string    `json:"email"`
+	Sexo     string    `json:"sexo"`
+	CriadoEm time.Time `gorm:"column:criado_em" json:"criado_em"`
 }
 
 func (Usuario) TableName() string {
 	return "usuarios"
-}
-
-// Validar garante que nehum dados obrigatorio vá em branco para o banco
-func (u *Usuario) Validar() error {
-	if u.Nome == "" || len(u.Nome) < 3 {
-		return errors.New("O nome é obrigatório e deve ter pelo menos 3 caracteres")
-	}
-	if u.Email == "" {
-		return errors.New("O Email é obrigatório")
-	}
-	if u.Sexo != "Masc" && u.Sexo != "Fem" {
-		return errors.New("O sexo da pessoa é obrigatório")
-	}
-	return nil
 }
