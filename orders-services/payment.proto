@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package payment;
+
+// Define onde o código gerado em Go vai morar
+option go_package = "./pb";
+
+// O serviço que o microserviço de pagamentos vai expor para o mundo interno
+service PaymentService {
+  rpc ProcessarPagamento (PaymentRequest) returns (PaymentResponse);
+}
+
+// O formato dos dados enviados (Request)
+message PaymentRequest {
+  string pedido_id = 1;
+  double valor = 2;
+}
+
+// O formato dos dados respondidos (Response)
+message PaymentResponse {
+  string status = 1; // "Aprovado" ou "Recusado"
+  string transacao_id = 2;
+}

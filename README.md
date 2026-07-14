@@ -1,90 +1,197 @@
-![Imagem Gerada pelo Gemini](Gemini_Generated_Image_likc0ylikc0ylikc.png)
 
-# 🚀 Roteamento Essencial: Entendendo o Método PUT
 
-O domínio das rotas `GET`, `POST`, `PUT` e `DELETE` (CRUD) é a base de qualquer aplicação web. Esta sequência de *branches* foi estruturada para ensinar o básico de cada método, seguindo o princípio de **dividir para conquistar**.
 
-## 1. Instalar as Dependências
+## 🏛️ O que são Microserviços?
 
-Execute os comandos abaixo no terminal para inicializar o módulo e instalar os pacotes necessários:
+A arquitetura de Microserviços é uma abordagem de design de software onde uma aplicação grande e complexa é dividida em vários serviços menores, independentes e especializados. Cada microserviço roda seu próprio processo, possui seu próprio banco de dados isolado e cuida de apenas uma funcionalidade de negócio (como "Pagamentos", "Autenticação" ou "Estoque"). Eles se comunicam entre si através de protocolos leves, como APIs HTTP/REST, gRPC ou mensageria (filas).
+
+O oposto de microserviços é o Monólito, onde todo o código do sistema (frontend, backend, banco de dados, regras de negócio) mora dentro de um único projeto e deploy.
+
+Para visualizar como o sistema deixa de ser um bloco único e se transforma em uma rede conectada, veja a diferença estrutural abaixo:
+
+![alt text](licensed-image.jpeg)
+
+## 🛠️ O que ela resolve? (As Dores do Mercado)
+
+Em empresas que crescem muito, o Monólito começa a dar problemas graves que os Microserviços resolvem:
+
+Escalabilidade Seletiva: Se o seu sistema é um e-commerce e chega a Black Friday, o serviço de "Busca de Produtos" e "Pagamentos" vai sofrer muito mais acessos do que o serviço de "Alteração de Cadastro". No Monólito, você precisa duplicar o sistema inteiro na nuvem para aguentar o tranco (gastando muito dinheiro). Com microserviços, você escala (cria mais instâncias) apenas o serviço de Pagamentos e Busca.
+
+Gargalo de Equipes (Deploy Independente): Em um monólito com 50 desenvolvedores mexendo no mesmo código, um time pode quebrar o código do outro. Para subir uma alteração boba no estoque, é preciso gerar o deploy do sistema inteiro. Com microserviços, o time de pagamentos faz deploy do seu serviço na terça-feira sem nem avisar o time de estoque, pois os projetos são totalmente separados.
+
+Resiliência: Se o serviço de "Recomendações de Produtos" cair por falta de memória, o e-commerce não para de funcionar. O cliente ainda consegue ver o carrinho, fazer login e pagar. O sistema falha de forma graciosa.
+
+## ⏳ Quando começou?
+
+O termo "Microservices" ganhou força e foi formalizado entre 2011 e 2012, impulsionado por pioneiros da indústria como Martin Fowler e James Lewis, além de grandes empresas como Netflix, Amazon e SoundCloud, que atingiram o limite do que seus monólitos conseguiam aguentar em termos de tráfego mundial.
+
+A Netflix, por exemplo, começou sua transição em 2008 após uma falha grave em seu banco de dados monolítico que parou a empresa por dias, concluindo a migração completa por volta de 2016.
+
+##💻 Para quais linguagens ela é usada?
+
+Os microserviços são agnósticos a linguagens de programação. Como cada serviço é independente e se comunica por protocolos de rede padrão (como JSON sobre HTTP ou Protocol Buffers sobre gRPC), você pode construir um ecossistema poliglota:
+
+Go (Golang): Tornou-se uma das linguagens mais populares e usadas para microserviços no mundo (usada por Uber, Twitch, Mercado Livre). Por ser compilada, iniciar em milissegundos, consumir pouquíssima memória e ter concorrência nativa (goroutines), ela é perfeita para serviços que precisam de performance extrema e baixo custo de nuvem.
+
+Java / Kotlin (Spring Boot): Muito forte em grandes corporações e bancos devido à maturidade do ecossistema.
+
+Node.js (TypeScript): Amplamente usada por times que querem unificar a linguagem do Frontend (React) com o Backend, ideal para APIs de I/O intensivo.
+
+Python / C#: Também muito presentes em cenários específicos (Python para IA/Dados e C# em ambientes corporativos Microsoft).
+
+Em resumo: você poderia ter o serviço de Pedidos em Go, o de Pagamentos em Java e o de Notificações em Node.js, e todos conversariam entre si perfeitamente.
+
+## 🗺️ Vamos inaugurar a Fase 1: Fundações de Microserviços.
+
+Como vimos na reintrodução acima, o grande desafio dessa arquitetura não é criar os serviços em si, mas sim fazer com que eles conversem de forma eficiente e resiliente.
+
+Para o nosso cenário prático, vamos construir dois microserviços independentes em Go:
+
+- Microserviço de Pedidos (orders-service): Recebe a requisição do usuário criando um pedido e salva no banco.
+
+- Microserviço de Pagamentos (payments-service): Processa o pagamento desse pedido.
+
+## 🗺️ Como eles vão se comunicar?
+
+Nesta primeira etapa, vamos implementar a Comunicação Síncrona via gRPC.
+
+### O que é gRPC?
+
+Em vez de usar o REST tradicional (onde o Go precisa transformar uma Struct em JSON, mandar pela rede, e o outro serviço precisa ler o JSON e transformar em Struct de novo), o gRPC (criado pelo Google) usa Protocol Buffers.
+
+Os dados são transmitidos em formato binário super compactado através do protocolo HTTP/2. Ele chega a ser até 10 vezes mais rápido que o REST tradicional, sendo o padrão ouro de mercado para microserviços conversarem entre si por baixo dos panos.
+
+Para ver o fluxo completo de como as requisições vão transitar no nosso sistema, desde a chamada externa até a comunicação binária interna, observe o diagrama abaixo:
+
+### 🏗️ Passo 1: Preparando o Terreno e as Dependências
+
+Como desenvolvedor pleno, você sabe que cada microserviço precisa ser um projeto Go completamente isolado, com seu próprio arquivo go.mod.
 
 ```bash
-go mod init meu-projeto-chi
-go get -u github.com/go-chi/chi/v5
-go get -u gorm.io/gorm
-go get -u gorm.io/driver/postgres
-``` 
-
----
-
-## 🎯 Branch Atual: `Topic/API_CRUD_DELETE_II`
-
-## 🗑️ As Duas Formas de Deletar Dados 
-
-1. Hard Delete (Exclusão Física).
-
-&nbsp;&nbsp;&nbsp;&nbsp;É o DELETE clássico do SQL (DELETE FROM usuarios WHERE id = ...). O registro é completamente apagado do disco do banco de dados.
-
-- Pró: Limpa espaço em disco instantaneamente.
-- Contra: Se foi apagado por engano (ou por um ataque), já era. Não dá para recuperar sem um backup.
-
-2. Soft Delete (Exclusão Lógica)
-
-&nbsp;&nbsp;&nbsp;&nbsp;O registro não é apagado do banco de dados. Em vez disso, adicionamos uma coluna chamada deletado_em (ou deleted_at) na tabela. Quando o usuário pede para deletar, o Go apenas grava a data/hora atual nessa coluna. Nas consultas (GET), nós filtramos para trazer apenas onde deletado_em IS NULL.
-
-#🏗️ A Estrutura de Pastas Completa
-
-```bash
-projeto-delete-only/
-├── cmd/
-│   └── api/
-│       └── main.go       # Conecta ao banco e liga as camadas
-├── internal/
-│   ├── entity/
-│   │   └── user.go       # A estrutura do dado (O que será deletado)
-│   ├── repository/
-│   │   └── user_db.go    # O contrato e a query física de exclusão
-│   └── handler/
-│       └── user_hand.go  # A recepção HTTP (Chi, parâmetros e Status 204)
+lab-microservices/
+├── orders-service/     # Projeto Go do serviço de Pedidos
+└── payments-service/   # Projeto Go do serviço de Pagamentos
 ```
 
-# Go CRUD Completo com Chi, GORM e Clean Architecture
+Para trabalharmos com gRPC no Go, precisamos instalar o compilador de protocolo (protoc) na sua máquina e os plugins do Go.
 
-Este projeto é uma API REST robusta e performática desenvolvida em Go (Golang), utilizando o roteador leve `go-chi/v5` e o ORM `GORM` integrado a um banco de dados PostgreSQL. O objetivo principal deste repositório é demonstrar a transição de um código centralizado para uma arquitetura profissional desacoplada, aplicando os princípios do SOLID.
+Instalação das ferramentas no sistema:
 
-## 🏗️ Arquitetura e Princípios Aplicados
+```python sudo apt install -y protobuf-compiler``` 
 
-A estrutura do projeto foi dividida em camadas lógicas bem definidas, seguindo os padrões de **Clean Architecture**:
+Instalando os plugins no Go:
 
-- **`internal/entity`**: Contém as regras de negócio e validações autônomas de dados (Princípio da Responsabilidade Única).
-- **`internal/repository`**: Camada de persistência que dita os contratos de banco através de interfaces, isolando o ORM (Inversão de Dependência).
-- **`internal/handler`**: Camada de entrega HTTP, responsável estritamente por gerenciar requisições, respostas, status codes e parâmetros de rotas.
+Abra o seu terminal e execute estes comandos globais para que o Go aprenda a gerar códigos gRPC:
 
----
-
-## 🛠️ Tecnologias Utilizadas
-
-- **Go** (Golang)
-- **Go-Chi/v5** (Roteador HTTP idiomático)
-- **GORM** (ORM para persistência)
-- **PostgreSQL** (Banco de dados relacional com suporte nativo a UUID)
-
----
-
-
-### Deletar Usuário (`DELETE`)
-Executa a remoção física (*Hard Delete*) de um registro baseado em seu UUID.
-- **URL:** `/usuarios/{id}`
-- **Método:** `DELETE`
-- **URL Params:** `id=[UUID Válido]`
-- **Respostas:**
-  - `204 No Content`: Usuário deletado com sucesso (sem corpo de resposta).
-  - `400 Bad Request`: Se o formato do UUID enviado na URL for inválido.
-  - `404 Not Found`: Se o usuário não for encontrado no banco de dados.
-
-## Como testar.
-&nbsp;&nbsp;&nbsp;&nbsp;Clone o repositṕorio e certifique-se de que o banco de dados existe. Rode o servidor //localhost.
-entre no banco de dados e escolhe um id qualquer para testar o "delete" e em um terminal rode o comando 
 ```bash 
-curl -X DELETE http://localhost:8080/usuarios/COLE-O-UUID-AQUI
+go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28
+go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
 ```
+
+
+## 📄 Passo 2: Definindo o Contrato (.proto)
+
+No gRPC, o contrato nasce antes do código. Nós escrevemos um arquivo .proto que descreve quais funções o serviço de pagamentos terá e quais dados ele aceita.
+
+Crie um arquivo chamado payment.proto dentro de uma pasta comum ou dentro do payments-service:
+
+⚡ Passo 3: Gerando o Código Go (protoc)
+
+Agora vem a mágica! Com o arquivo corrigido e salvo, vamos rodar o comando que vai ler esse .proto e criar toda a estrutura que o Go precisa para rodar o gRPC (as structs, funções e o cliente/servidor).
+
+Abra o terminal.
+
+- Vá até a pasta onde está o seu arquivo (dentro de payments-services).
+
+- Execute o seguinte comando:
+
+```bash protoc --go_out=. --go-grpc_out=. payment.proto```
+
+## 🧐 O que esse comando faz?
+
+    --go_out=.: Diz para o compilador gerar as structs normais do Go (Request e Response) na pasta atual baseada no go_package (que definimos como ./pb).
+
+    --go-grpc_out=.: Diz para gerar as funções específicas de servidor e cliente gRPC do Go.
+
+Após rodar esse comando, você vai notar que uma nova pasta chamada pb vai aparecer no seu projeto com dois arquivos dentro: payment.pb.go e payment_grpc.pb.go. Nunca mexa nesses arquivos gerados, eles são gerenciados pelo gRPC.
+
+Rode o comando no seu terminal. Deu tudo certo e a pasta pb foi criada? Se sim, me avise para criarmos o servidor de Pagamentos em Go que vai ler esse contrato!
+
+Agora que a pasta pb foi criada com os arquivos gerados automaticamente, nós temos o "esqueleto" do gRPC pronto.
+
+O nosso próximo passo é dar vida a esse esqueleto. Vamos criar o Servidor do Microserviço de Pagamentos (payments-service). Ele vai escutar em uma porta lógica (geralmente usamos a 50051 para gRPC) esperando que o serviço de Pedidos envie uma ordem de pagamento.
+
+## 🏗️ Estrutura de Pastas do payments-services
+
+O seu projeto de pagamentos vai ficar organizado dessa forma agora: 
+
+```bash payments-services/
+├── pb/
+│   ├── payment.pb.go       # Gerado pelo protoc
+│   └── payment_grpc.pb.go  # Gerado pelo protoc
+├── main.go                 # Inicia o servidor gRPC na porta 50051
+├── payment.proto           # O contrato que você criou
+
+```
+## 💻 Escrevendo o Servidor (main.go)
+
+Antes de colar o código, precisamos inicializar o módulo do Go e baixar a dependência oficial do gRPC. No terminal, dentro da pasta payments-services, rode:
+
+``` bash 
+go mod init payments-services
+go get google.golang.org/grpc
+go mod tidy
+``` 
+Execute go run main.go e deixa o servidor rodando.
+
+___
+
+### Servidor gRPC de pé e escutando na porta :50051. Metade da Fase 1 está concluída.
+
+Agora vamos criar o Microserviço de Pedidos (orders-services). Ele será o responsável por receber uma requisição, simular a criação de um pedido e fazer uma chamada gRPC interna para o serviço de Pagamentos que você acabou de ligar.
+
+## 🏗️ Passo 1: Copiar o Contrato (payment.proto)
+
+Para que o serviço de Pedidos saiba como falar com o serviço de Pagamentos, ele precisa conhecer o mesmo contrato
+
+- Crie uma pasta chamada pb dentro de orders-services.
+- Copie o arquivo payment.proto que você usou no outro projeto e cole dentro de orders-services.
+- Abra o terminal, navegue até a pasta orders-services e rode o mesmo comando do protoc para gerar os arquivos Go locais dele:
+
+```bash cd ../orders-services
+protoc --go_out=. --go-grpc_out=. payment.proto
+```
+📦 Passo 2: Inicializar o Módulo de Pedidos
+
+Ainda dentro da pasta orders-services, vamos inicializar o módulo do Go e baixar as dependências do gRPC para esse serviço:
+
+```bash
+go mod init orders-services
+go get google.golang.org/grpc
+go mod tidy
+```
+
+## 💻 Escrevendo o Cliente (main.go de Pedidos)
+
+Agora, crie o arquivo main.go dentro de orders-services. Este código vai se conectar no servidor :50051, disparar um pedido de teste e ler a resposta binária.
+
+Perceba o uso do context.WithTimeout. Em microserviços, se o serviço de pagamentos estiver lento, o serviço de pedidos não pode ficar travado para sempre. O Context cancela a chamada se ela demorar mais de 3 segundos!
+
+## 🏃‍♂️ O Teste do Ecossistema
+
+Agora você tem os dois lados da moeda. Vamos fazê-los conversar:
+
+- Deixe o terminal do payments-services ligado e rodando.
+- Abra um segundo terminal e vá para a pasta do orders-services:
+
+## 🎯 O que vai acontecer:
+
+No terminal de Pedidos, você verá a resposta impressa na tela dizendo que o pagamento foi Aprovado. E se você olhar o terminal de Pagamentos, verá o log pipocando na hora informando que ele recebeu a chamada e processou o valor!
+
+Faça esse disparo. 
+
+![alt text](<Screenshot From 2026-07-13 17-36-00.png>)
+
+___
+
+![alt text](<Screenshot From 2026-07-13 17-36-25.png>)
