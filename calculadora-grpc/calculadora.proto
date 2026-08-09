@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package calculadora;
+
+option go_package = "./pb";
+
+// O contrato do serviço
+service CalculadoraService {
+  rpc Somar (SomaRequest) returns (SomaResponse);
+}
+
+// O que o cliente envia
+message SomaRequest {
+  int32 num1 = 1;
+  int32 num2 = 2;
+}
+
+// O que o servidor responde
+message SomaResponse {
+  int32 resultado = 1;
+}
+
+
+
+/*
+Este código é um arquivo de configuração do Protocol Buffers (ou Protobuf), que é a linguagem de definição de interface (IDL) utilizada pelo gRPC. Ele funciona como um contrato universal. A partir deste arquivo de texto simples, o compilador do gRPC consegue gerar automaticamente códigos prontos em Go, Java, Python ou qualquer outra linguagem para fazer a API funcionar.
+
+
+// 1. Define a versão da sintaxe do Protocol Buffers que o compilador deve usar
+syntax = "prot3"
+
+// 2. Define o espaço de nomes lógico para evitar conflitos com outros arquivos proto
+package calculador;
+
+// 3. Define onde e sob qual nome os arquivos em Go gerados automaticamente serão salvos
+option go_Pack = "./pb"
+
+// 4. O contrato do serviço: define quais funções a API gRPC vai disponibilizar
+service Calculadora{
+      // Uma função remota chamada 'Somar' que recebe uma mensagem e devolve outra
+    rpc Somar (SomaRequest) returns(SomaResponse)
+}
+
+// 5. Estrutura de dados com os parâmetros de entrada que o cliente precisa de enviar
+message SomaRequest{
+    int32 num1 =1;// Primeiro número inteiro (salvo na posição de memória 1)
+    int32 num2 =2;// Primeiro número inteiro (salvo na posição de memória 2)
+}
+
+// 6. Estrutura de dados com o formato da resposta que o servidor vai devolver
+message SomaResponse{
+    int32 resultado =1// O resultado inteiro da soma (salvo na posição de memória 1)
+}
+
+
+
+*/
