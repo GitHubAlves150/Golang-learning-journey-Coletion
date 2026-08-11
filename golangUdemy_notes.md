@@ -11,25 +11,51 @@ Comunicação básica entre **goroutines** usando **channels** (canais).
 ## 📝 Código
 
 ```go
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+// ============================================
+// channels
+// ============================================
+
 func main() {
-    ch := make(chan string)        // 1. Cria o canal
 
-    go func() {                     // 2. Goroutine que ESCREVE
-        ch <- "Olá!"                //    Envia mensagem
-    }()
+	ch := make(chan string, 3) //declaração do channel
 
-    msg := <-ch                     // 3. LÊ a mensagem
-    fmt.Println(msg)                //    Saída: "Olá!"
+	go func()  {
+		fmt.Println("escrevendo no channel com buffer")
+		ch <- "menssagem 1"
+		fmt.Println("Menssagem 1 enviada")
+		ch <- "menssagem 2"
+		fmt.Println("Menssagem 2 enviada")
+		ch <- "menssagem 3"
+		fmt.Println("Menssagem 3 enviada")
+		ch <- "menssagem 4"
+		fmt.Println("Menssagem 4 enviada")
+	}()
+
+	time.Sleep(2 *time.Second)
+
+	go func ()  {
+		for i:=0; i<4;i++{
+			msg:= <-ch
+			fmt.Println("Recebido: ", msg)
+			time.Sleep(1*time.Second)
+		}
+
+	}()
+
+
+	time.Sleep(10*time.Second)
+
+
+	fmt.Println("....FIM.....")
 }
 
-```
-
-# 🔍 Como funciona  
-```go
-Linha                   	Ação
-make(chan string)	        Cria um canal que transporta string
-ch <- "Olá!"	            ESCREVE no canal (seta ←)
-msg := <-ch	                LÊ do canal (seta →)
 
 ```
 
