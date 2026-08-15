@@ -6,53 +6,44 @@ import (
 	"time"
 )
 
-func InspecionaOperacao(ctxFinal context.Context) {
+// O SOLDADO (nossa goroutine)
+// Repare que o Context é sempre o primeiro parâmetro da função
+func missãoDoSoldado(ctx context.Context) {
+	fmt.Println("Soldado: Entrei na floresta e comecei a procurar por suprimentos")
 
-	//1. Método: Value(key) -> Recupera dados do "crachá" do contexto
-	if operador, ok := ctxFinal.Value("operador_id").(string); ok {
-		fmt.Printf("\n👤 Operador responsável: %s\n", operador)
-	} else {
-		fmt.Printf("\n👤 Nenhum operador identificado no conexto.")
-	}
+	// Críamos um canal falso para simular o tempo que leva para achar os suprimentos
+	suprimentosAchados := time.After(3 * time.Second)
 
-	//2. Método: Deadline()-> Devolve QUANDO o contexto vai expirar (no formato time.Time)
-	//O 'ok' devolve true se o contexto tiver um tempo limite definido, ou false se for eterno.
-	if horarioLimite, ok := ctxFinal.Deadline(); ok {
-		tempoRestante := time.Until(horarioLimite)
-		fmt.Printf("\n⏱️ Horário limite: %s (Resta exatamente: %v)\n", horarioLimite.Format("15:04:10"), tempoRestante)
-
-	} else {
-		fmt.Printf("\n⏱️ Este horário é externo, não tem horário limite\n")
-	}
-
-	fmt.Printf("\n⏳ Iniciando processamento pesado....\n")
-
+	// O soldado fica ouvindo o rádio através do SELECT, enquanto o trabalho.
 	select {
-	case <-time.After(500 * time.Millisecond):
-		fmt.Printf("\n ✅ Processamento concluído com sucesso\n")
-	case <-ctxFinal.Done():
-		//3. Método: Err() -> Só devolve algo  DEPOIS que o Done() fecha.
-		//Ele diz a razão do cancelamento: ou "context deadline exceeded" (timeout)
-		//ou "context canceled" (cancelamento manual)
-		fmt.Printf("\n❌ERROR: \n", ctxFinal.Err())
+	case <-suprimentosAchados:
+		// Se os 3 segundos passarem antes do rádio apitar, a missão foi um sucesso
+		fmt.Printf("\nMissão com sucesso\n")
+	case <-ctx.Done():
+		// O rádio apitou ! o canal do contexto fechou porque o tempo acabou lá na base
+		fmt.Println("Soldado! Recebi ordens pelo rádio, para abortar a missão e voltar pra base")
+		fmt.Printf("Soldado (Motivo gravado no relatório): %v\n", ctx.Err())
 	}
-
 }
 
+// O COMANDANTE (A função Main)
 func main() {
 
-	ctx := context.Background()
-	operador := "operador_id"
-	driver := "Lucas_Dev_2026"
+	// O comandante pega um contexto base "vazio"
+	contextBase := context.Background()
 
-	//injetamos um dado usando value
-	ctxComvalor := context.WithValue(ctx, operador, driver)
+	// O Comandante define o limite : "Só temos 2 segundos"
+	// Ele ganha o "contextoComComPrazo" (o rádio) e a função abortaMissão (o botão de emergência)
+	contextoComPrazo, abortaMissao:=context.WithTimeout(contextBase, 5 * time.Second)
 
-	//Criamos um timeout curto de 200ms apartir do contexto que já tinha o valor
-	ctxFinal, cancel := context.WithTimeout(ctxComvalor, 200*time.Millisecond)
-	defer cancel()
+	// O defer garante que o botão de cancelar seja limpo da memória assim que a main acabar
+	defer abortaMissao()
 
-	//Executa a inspeção
-	InspecionaOperacao(ctxFinal)
+	// O Comandante envia o Soldado para a missão e entrega o rádio para ele
+	go missãoDoSoldado(contextoComPrazo)
 
+
+	// A Main (comandante precisa esperar um pouco na base para ver o soldado responder)
+	time.Sleep(4 * time.Second)
+	fmt.Println("Comandante: Operação encerrada")
 }
