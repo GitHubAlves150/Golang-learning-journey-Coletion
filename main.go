@@ -1,122 +1,104 @@
+// Estudos de Goroutine
+// Lucas Lorenço Alves
+// Ano 09/2026
+
+/*
+	Recaptular os estudos de Goroutine.
+	[*]Nível 1 : Gouroutine básica
+	[*]Nível 2 : Waitgroup (esperar gorourine)
+    [*]Nível 3 : Channel unbuffered
+	[ ]Nível 4 : Channel buffered
+	[ ]Nível 5 : Armadilha do loop
+	[ ]Nível 6 : Mutex (proteger estado)
+	[ ]Nível 7 : Workerpool
+*/
+
+// Criar uma função que calcula o consumo de combustível
+// Criar uma função que calcula a velocidade do veiculo
+
+// Motrar na tela o valor do combustível
+// Mostrar o toal de veículo
+// Mostrar o número de veículo que esta dentro do limite
+// Mostrar o número de veículo que está acima do limite
+
 package main
 
 import (
 	"fmt"
-	"strings"
+	"sync"
 )
 
-//============================================
-//INTERFACE INDIVIDUAIS
-//============================================
-
-type Localizavel interface {
-	ObterCoordenadas() (lat, lon float64)
-}
-
-type Velocidade interface {
-	ObterVelocidade() float64
-}
-
-type Direcao interface {
-	ObterDirecao() float64
-}
-
-// ============================================
-// COMPOSIÇÃO: Interface que COMBINA outras
-// ============================================
-// Rastreador completo tem TODOS os métodos das interfaces acima
-type RastreadorCompleto interface {
-	Localizavel //Tem ObterCoordenadas
-	Velocidade  //Tem ObterVelocidade
-	Direcao     //Tem ObterDireção
-
-	//Dá para adicionar mpetodos próprios
-	GetID() string
-}
-
-// ============================================
-// IMPLEMENTAÇÃO
-// ============================================
-// --Tipo comcreto
-type RastreadorReal struct {
+type Job struct {
 	ID         string
-	UltimaLat  float64
-	UltimaLon  float64
 	Velocidade float64
-	Direcao    float64
+	KmRodados  float64
 }
 
-// Implementação
-func (r RastreadorReal) ObterCoordenadas() (float64, float64) {
-	return r.UltimaLat, r.UltimaLon
+type Resultado struct {
+	ID     string
+	Status string
+	Custo  float64
 }
 
-func (v RastreadorReal) ObterVelocidade() float64 {
-	return v.Velocidade
-}
+// Crinado a função worker
+func worker(id int, jobs <-chan Job, resultado chan<- Resultado, wg *sync.WaitGroup) {
+	defer wg.Done()
 
-func (d RastreadorReal) ObterDirecao() float64 {
-	return d.Direcao
-}
+	for j := range jobs { // lê até o channel terminar
+		status := "OK"
 
-func (r RastreadorReal) GetID() string {
-	return r.ID
-}
-
-// ============================================
-// Funções que usam as interfaces
-// ============================================
-
-// Função que só precisa de localização
-func MostrarLocal(locallizavel Localizavel) {
-	lat, lon := locallizavel.ObterCoordenadas()
-	fmt.Printf("\nLocalização:%.4f, %.4f ", lat, lon)
-}
-
-// Função que precisa de tudo (rastreador completo)
-func MostrarStatusCompleto(rastrear RastreadorCompleto) {
-	fmt.Println("\n=====STATUS COMPLETO==========")
-	fmt.Printf("\nID: %s", rastrear.GetID())
-
-	lat, lon := rastrear.ObterCoordenadas()
-	fmt.Printf("\nPosição [%.4f - %.4f]", lat, lon)
-
-	fmt.Printf("\nvelocidade: %.1f", rastrear.ObterVelocidade())
-	fmt.Printf("\nDireção: %.1f", rastrear.ObterDirecao())
-	fmt.Printf(strings.Repeat("=", 50))
+		if j.Velocidade > 80 {
+			status = "ACIMA"
+		}
+		custo := j.KmRodados * 0.10 * 6.50
+		resultado <- Resultado{
+			ID:     j.ID,
+			Status: status,
+			Custo:  custo,
+		}
+	}
 }
 
 func main() {
-	rastreador := RastreadorReal{
-	ID:           "ES",
-	UltimaLat:   -32.2222,
-	UltimaLon:   -45.5555,
-	Velocidade:  34.2,
-	Direcao:     84.3,
+
+	veiculos := []Job{
+		{"CAR-000", 14.90, 60.4},
+		{"CAR-001", 44.90, 10.4},
+		{"CAR-002", 24.90, 69.4},
+		{"CAR-003", 84.90, 10.1},
+		{"CAR-004", 64.90, 50.1},
 	}
 
-	//RastreadorReal implementa Localizavel (porque tem ObterCoordenadas)
-	MostrarLocal(rastreador)
+	jobs := make(chan Job, 10)
+	results := make(chan Resultado, 10)
+	var wg sync.WaitGroup
 
-	//RastreadorReal implementa RastreadorCompleto (tem todos os métodos)
-	MostrarStatusCompleto(rastreador)
-
-
-	// ========================================
-    // DEMONSTRAÇÃO DE FLEXIBILIDADE
-    // ========================================
-
-	fmt.Printf("\n--Flexibilidade: Funções aceitam diferentes interfaces --")
-
-	//Função que aceita Localizavel (pode ser qualquer coisa com coordenadas)
-	coordenadas := []Localizavel{
-        rastreador,
-         // struct anônima
-    }
-
-	for _, valores:= range coordenadas{
-		//fmt.Printf("|", valores)
-		MostrarLocal(valores)
+	// 1. lança os workers
+	wg.Add(3)
+	for i := 1; i <= 3; i++ {
+		go worker(i, jobs, results, &wg)
 	}
 
+	// 2. envia os jobs numa goroutine separada
+	go func() {
+		for _, v := range veiculos {
+			jobs <- Job{
+				ID:         v.ID,
+				Velocidade: v.Velocidade,
+				KmRodados:  v.KmRodados,
+			}
+		}
+		close(jobs) // avisa workers que acabou
+	}()
+
+	// 3. fecha results quando todos workers terminarem
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+
+	// 4. coleta resultados
+	for r := range results {
+		fmt.Printf("%s | %s | Custo: R$ %.2f\n", r.ID, r.Status, r.Custo)
+	}
 }
